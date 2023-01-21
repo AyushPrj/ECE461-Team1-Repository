@@ -1,2 +1,1 @@
-# ece-461
-ECE461 Repository
+# ECE461 Team Repository
