@@ -1,4 +1,4 @@
-module main/main.go
+module proj
 
 go 1.19
 
