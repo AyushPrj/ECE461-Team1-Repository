@@ -204,3 +204,21 @@ func GetRawREADME(repo Repo) string {
 	// fmt.Println(string(responseData))
 	return string(responseData)
 }
+
+
+func GetRawREADME(repo Repo) string {
+	url := getReadmeURL(repo)
+	response, err := http.Get(url)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// fmt.Println(string(responseData))
+	return string(responseData)
+}
