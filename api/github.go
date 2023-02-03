@@ -183,3 +183,24 @@ func getTopContributor(url string) Contributor {
 	// Return top contributor
 	return responseObject[0]
 }
+
+func getReadmeURL(repo Repo) string {
+	return "https://raw.githubusercontent.com/" + repo.FullName + "/" + repo.DefaultBranch + "/README.md"
+}
+
+func GetRawREADME(repo Repo) string {
+	url := getReadmeURL(repo)
+	response, err := http.Get(url)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// fmt.Println(string(responseData))
+	return string(responseData)
+}

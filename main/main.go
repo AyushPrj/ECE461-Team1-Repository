@@ -34,6 +34,7 @@ func main() {
 
 	fmt.Println(GITHUB_TOKEN, LOG_LEVEL, LOG_FILE)
 	test := api.GetRepo("cloudinary/cloudinary_npm")
+	fmt.Println(api.GetRawREADME(test))
 	fmt.Println(test.License != nil)
 
 }
