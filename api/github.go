@@ -3,13 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 )
 
+// useful data (name, full_name, default_branch, license, contributions_url)
 type Repo struct {
 	ID       int    `json:"id"`
 	NodeID   string `json:"node_id"`
@@ -134,6 +135,13 @@ type Repo struct {
 	SubscribersCount int `json:"subscribers_count"`
 }
 
+type Contributor struct {
+	Login         string `json:"login"`
+	ID            int    `json:"id"`
+	NodeID        string `json:"node_id"`
+	Contributions int    `json:"contributions"`
+}
+
 func GetRepo(url string) Repo {
 
 	response, err := http.Get("https://api.github.com/repos/" + url)
@@ -143,7 +151,7 @@ func GetRepo(url string) Repo {
 		os.Exit(1)
 	}
 
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -151,5 +159,27 @@ func GetRepo(url string) Repo {
 	var responseObject Repo
 	json.Unmarshal(responseData, &responseObject)
 	// fmt.Println(responseObject.License == nil)
+	topContributor := getTopContributor(responseObject.ContributorsURL)
+	fmt.Println(topContributor)
 	return responseObject
+}
+
+func getTopContributor(url string) Contributor {
+	response, err := http.Get(url)
+
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var responseObject []Contributor
+	json.Unmarshal(responseData, &responseObject)
+
+	// Return top contributor
+	return responseObject[0]
 }
