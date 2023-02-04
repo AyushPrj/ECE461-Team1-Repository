@@ -9,7 +9,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -145,43 +144,44 @@ type Contributor struct {
 	Contributions int    `json:"contributions"`
 }
 
-func GetRepo(url string) Repo {
+func getRequest(url, GITHUB_TOKEN string) []byte {
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("Authorization", "Bearer "+GITHUB_TOKEN)
+	req.Header.Add("Accept", "application/json")
 
-	response, err := http.Get("https://api.github.com/repos/" + url)
-
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
+		log.Println("Error on response.\n[ERROR] -", err)
 	}
 
-	responseData, err := io.ReadAll(response.Body)
+	defer resp.Body.Close()
+
+	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	return responseData
+}
+
+func GetRepo(url, GITHUB_TOKEN string) Repo {
+
+	responseData := getRequest("https://api.github.com/repos/"+url, GITHUB_TOKEN)
 
 	var responseObject Repo
 	json.Unmarshal(responseData, &responseObject)
 	// fmt.Println(responseObject.License == nil)
-	topContributor := getTopContributor(responseObject.ContributorsURL)
+	topContributor := getTopContributor(responseObject.ContributorsURL, GITHUB_TOKEN)
 	fmt.Println(topContributor)
 	return responseObject
 }
 
-func getTopContributor(url string) Contributor {
-	response, err := http.Get(url)
-
-	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
-	}
-
-	responseData, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
+func getTopContributor(url, GITHUB_TOKEN string) Contributor {
+	respData := getRequest(url, GITHUB_TOKEN)
 
 	var responseObject []Contributor
-	json.Unmarshal(responseData, &responseObject)
+	json.Unmarshal(respData, &responseObject)
 
 	// Return top contributor
 	return responseObject[0]
@@ -235,20 +235,4 @@ func GetRawREADME(repo Repo) string {
 
 	// fmt.Println(string(responseData))
 	return string(responseData)
-}
-
-func GetLicenseFromREADME(readmeText string) string {
-
-	// parse readme for license, return specific license if found, return empty string if not found
-
-	/* unsure about which specific licenses are compatible with LGPLv2.1 license, would like to go through a list of all
-	the compatible licenses if they were known and return the specific license that was found
-	*/
-	if (strings.Contains(readmeText, "License") == true) && (strings.Contains(readmeText, "MIT") == true) {
-
-		return "MIT"
-	}
-
-	return ""
-
 }

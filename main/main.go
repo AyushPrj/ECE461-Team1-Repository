@@ -33,8 +33,11 @@ func main() {
 	}
 
 	fmt.Println(GITHUB_TOKEN, LOG_LEVEL, LOG_FILE)
-	test := api.GetRepo("cloudinary/cloudinary_npm")
-	fmt.Println(api.GetRawREADME(test))
-	fmt.Println(test.License != nil)
+	api.GetRepo("cloudinary/cloudinary_npm", GITHUB_TOKEN)
+	// fmt.Println(api.GetRawREADME(test))
+	// fmt.Println(test.License != nil)
+
+	// test := api.GetNPMData("nodist").License
+	// fmt.Println(test)
 
 }
