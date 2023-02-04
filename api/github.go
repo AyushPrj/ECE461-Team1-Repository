@@ -188,6 +188,23 @@ func getTopContributor(url, GITHUB_TOKEN string) Contributor {
 	return responseObject[0]
 }
 
+func getTotalNumContributions(url, GITHUB_TOKEN string) int {
+
+	respData := getRequest(url, GITHUB_TOKEN)
+	var responseObject []Contributor
+	json.Unmarshal(respData, &responseObject)
+
+	totalNumContributions := 0
+
+	for i := 0; i < len(responseObject); i++ {
+
+		totalNumContributions += responseObject[i].Contributions
+	}
+
+	return totalNumContributions
+
+}
+
 func getClosedIssues(issueData string) int {
 
 	var onlyNumsRegex = regexp.MustCompile("[^0-9]+")
