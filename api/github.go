@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -205,15 +206,14 @@ func GetRawREADME(repo Repo) string {
 	return string(responseData)
 }
 
-
-func GetLicenseFromREADME(readmeText string) string{
+func GetLicenseFromREADME(readmeText string) string {
 
 	// parse readme for license, return specific license if found, return empty string if not found
-	
-	/* unsure about which specific licenses are compatible with LGPLv2.1 license, would like to go through a list of all 
+
+	/* unsure about which specific licenses are compatible with LGPLv2.1 license, would like to go through a list of all
 	the compatible licenses if they were known and return the specific license that was found
 	*/
-	if (strings.Contains(readmeText, "License") == true)  && (strings.Contains(readmeText, "MIT") == true) {
+	if (strings.Contains(readmeText, "License") == true) && (strings.Contains(readmeText, "MIT") == true) {
 
 		return "MIT"
 	}
