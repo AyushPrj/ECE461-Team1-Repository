@@ -143,14 +143,17 @@ type Contributor struct {
 	Contributions int    `json:"contributions"`
 }
 
-func GetRepo(url string) Repo {
+func GetRepo(url, GITHUB_TOKEN string) Repo {
 
-	response, err := http.Get("https://api.github.com/repos/" + url)
-
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/"+url, nil)
+	req.Header.Add("Authorization", "Bearer "+GITHUB_TOKEN)
 	if err != nil {
 		fmt.Print(err.Error())
 		os.Exit(1)
 	}
+
+	client := &http.Client{}
+	response, _ := client.Do(req)
 
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
