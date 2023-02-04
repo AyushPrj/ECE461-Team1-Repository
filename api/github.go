@@ -1,14 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -145,6 +144,31 @@ type Contributor struct {
 	Contributions int    `json:"contributions"`
 }
 
+func getGraphQLData(query, GITHUB_TOKEN string) []byte {
+	body := []byte(query)
+
+	req, _ := http.NewRequest(http.MethodPost, "https://api.github.com/graphql", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer "+GITHUB_TOKEN)
+	// req.Header.Add("Accept", "application/json")
+	// req.Header.Add("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
+	}
+
+	defer resp.Body.Close()
+
+	responseData, err := io.ReadAll(resp.Body)
+	// fmt.Println(string(responseData))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return responseData
+}
+
 func getRequest(url, GITHUB_TOKEN string) []byte {
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", "Bearer "+GITHUB_TOKEN)
@@ -173,26 +197,18 @@ func GetRepo(url, GITHUB_TOKEN string) Repo {
 	var responseObject Repo
 	json.Unmarshal(responseData, &responseObject)
 	// fmt.Println(responseObject.License == nil)
-	topContributor := getTopContributor(responseObject.ContributorsURL, GITHUB_TOKEN)
-	fmt.Println(topContributor)
+	// topContributor := getTopContributor(responseObject.ContributorsURL, GITHUB_TOKEN)
+	// fmt.Println(topContributor)
 	return responseObject
 }
 
-func getTopContributor(url, GITHUB_TOKEN string) Contributor {
-	respData := getRequest(url, GITHUB_TOKEN)
-
-	var responseObject []Contributor
-	json.Unmarshal(respData, &responseObject)
+func getTopContributor(responseObject []Contributor) Contributor {
 
 	// Return top contributor
 	return responseObject[0]
 }
 
-func getTotalNumContributions(url, GITHUB_TOKEN string) int {
-
-	respData := getRequest(url, GITHUB_TOKEN)
-	var responseObject []Contributor
-	json.Unmarshal(respData, &responseObject)
+func getTotalNumContributions(responseObject []Contributor) int {
 
 	totalNumContributions := 0
 
@@ -205,33 +221,43 @@ func getTotalNumContributions(url, GITHUB_TOKEN string) int {
 
 }
 
-func getClosedIssues(issueData string) int {
+// Number of contributions made by the top contributor by the total contributions
+func GetContributionRatio(url, TOKEN string) float32 {
+	respData := getRequest(url, TOKEN)
 
-	var onlyNumsRegex = regexp.MustCompile("[^0-9]+")
-	onlyNumsString := onlyNumsRegex.ReplaceAllString(issueData, "")
-	numClosedIssues, err := strconv.Atoi(onlyNumsString)
+	var responseObject []Contributor
+	json.Unmarshal(respData, &responseObject)
 
-	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
-	}
+	top := getTopContributor(responseObject).Contributions
+	total := getTotalNumContributions(responseObject)
 
-	return numClosedIssues
-
+	return float32(top) / float32(total)
 }
 
-func getTotalIssues(issueData string) int {
+// Takes in owner, name and TOKEN and outputs the (closed issues, total issues)
+func GetIssuesCount(owner, name, GITHUB_TOKEN string) (int, int) {
+	query := "{\"query\" : \"query{repository(owner: \\\"cloudinary\\\", name: \\\"cloudinary_npm\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
 
-	var onlyNumsRegex = regexp.MustCompile("[^0-9]+")
-	onlyNumsString := onlyNumsRegex.ReplaceAllString(issueData, "")
-	numTotalIssues, err := strconv.Atoi(onlyNumsString)
+	respData := (getGraphQLData(query, GITHUB_TOKEN))
+	// fmt.Println(string(respData))
 
-	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
+	type Issue struct {
+		Data struct {
+			Repository struct {
+				Total struct {
+					TotalCount int `json:"totalCount"`
+				} `json:"total"`
+				Closed struct {
+					TotalCount int `json:"totalCount"`
+				} `json:"closed"`
+			} `json:"repository"`
+		} `json:"data"`
 	}
 
-	return numTotalIssues
+	var respObj Issue
+	json.Unmarshal(respData, &respObj)
+
+	return respObj.Data.Repository.Closed.TotalCount, respObj.Data.Repository.Total.TotalCount
 }
 
 func getReadmeURL(repo Repo) string {

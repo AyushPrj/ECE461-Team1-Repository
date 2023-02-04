@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"proj/api"
+	"proj/metrics"
 
 	"github.com/joho/godotenv"
 )
@@ -32,10 +32,15 @@ func main() {
 		fmt.Println(arg)
 	}
 
-	fmt.Println(GITHUB_TOKEN, LOG_LEVEL, LOG_FILE)
-	api.GetRepo("cloudinary/cloudinary_npm", GITHUB_TOKEN)
+	// fmt.Println(GITHUB_TOKEN, LOG_LEVEL, LOG_FILE)
+
+	// GETS ALL THE METRICS IN THIS FUNCTION GIVEN THE URL (ONLY WORKS FOR GITHUB CURRENTLY)
+	metrics.GetMetrics("cloudinary/cloudinary_npm", GITHUB_TOKEN)
+
+	// api.GetRepo("cloudinary/cloudinary_npm", GITHUB_TOKEN)
 	// fmt.Println(api.GetRawREADME(test))
 	// fmt.Println(test.License != nil)
+	// api.GetIssuesCount("", "", GITHUB_TOKEN)
 
 	// test := api.GetNPMData("nodist").License
 	// fmt.Println(test)
