@@ -7,6 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -184,6 +187,35 @@ func getTopContributor(url string) Contributor {
 	return responseObject[0]
 }
 
+func getClosedIssues(issueData string) int {
+
+	var onlyNumsRegex = regexp.MustCompile("[^0-9]+")
+	onlyNumsString := onlyNumsRegex.ReplaceAllString(issueData, "")
+	numClosedIssues, err := strconv.Atoi(onlyNumsString)
+
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	return numClosedIssues
+
+}
+
+func getTotalIssues(issueData string) int {
+
+	var onlyNumsRegex = regexp.MustCompile("[^0-9]+")
+	onlyNumsString := onlyNumsRegex.ReplaceAllString(issueData, "")
+	numTotalIssues, err := strconv.Atoi(onlyNumsString)
+
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	return numTotalIssues
+}
+
 func getReadmeURL(repo Repo) string {
 	return "https://raw.githubusercontent.com/" + repo.FullName + "/" + repo.DefaultBranch + "/README.md"
 }
@@ -203,4 +235,20 @@ func GetRawREADME(repo Repo) string {
 
 	// fmt.Println(string(responseData))
 	return string(responseData)
+}
+
+func GetLicenseFromREADME(readmeText string) string {
+
+	// parse readme for license, return specific license if found, return empty string if not found
+
+	/* unsure about which specific licenses are compatible with LGPLv2.1 license, would like to go through a list of all
+	the compatible licenses if they were known and return the specific license that was found
+	*/
+	if (strings.Contains(readmeText, "License") == true) && (strings.Contains(readmeText, "MIT") == true) {
+
+		return "MIT"
+	}
+
+	return ""
+
 }
