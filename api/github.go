@@ -143,46 +143,44 @@ type Contributor struct {
 	Contributions int    `json:"contributions"`
 }
 
-func GetRepo(url, GITHUB_TOKEN string) Repo {
-
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/"+url, nil)
-	req.Header.Add("Authorization", "Bearer "+GITHUB_TOKEN)
-	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
-	}
+func getRequest(url, GITHUB_TOKEN string) []byte {
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("Authorization", "Bearer "+GITHUB_TOKEN)
+	req.Header.Add("Accept", "application/json")
 
 	client := &http.Client{}
-	response, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
+	}
 
-	responseData, err := io.ReadAll(response.Body)
+	defer resp.Body.Close()
+
+	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	return responseData
+}
+
+func GetRepo(url, GITHUB_TOKEN string) Repo {
+
+	responseData := getRequest("https://api.github.com/repos/"+url, GITHUB_TOKEN)
 
 	var responseObject Repo
 	json.Unmarshal(responseData, &responseObject)
 	// fmt.Println(responseObject.License == nil)
-	topContributor := getTopContributor(responseObject.ContributorsURL)
+	topContributor := getTopContributor(responseObject.ContributorsURL, GITHUB_TOKEN)
 	fmt.Println(topContributor)
 	return responseObject
 }
 
-func getTopContributor(url string) Contributor {
-	response, err := http.Get(url)
-
-	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
-	}
-
-	responseData, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
+func getTopContributor(url, GITHUB_TOKEN string) Contributor {
+	respData := getRequest(url, GITHUB_TOKEN)
 
 	var responseObject []Contributor
-	json.Unmarshal(responseData, &responseObject)
+	json.Unmarshal(respData, &responseObject)
 
 	// Return top contributor
 	return responseObject[0]
@@ -216,7 +214,7 @@ func GetLicenseFromREADME(readmeText string) string {
 	/* unsure about which specific licenses are compatible with LGPLv2.1 license, would like to go through a list of all
 	the compatible licenses if they were known and return the specific license that was found
 	*/
-	if (strings.Contains(readmeText, "License") == true) && (strings.Contains(readmeText, "MIT") == true) {
+	if (strings.Contains(readmeText, "License")) && (strings.Contains(readmeText, "MIT")) {
 
 		return "MIT"
 	}
