@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -235,4 +236,20 @@ func GetRawREADME(repo Repo) string {
 
 	// fmt.Println(string(responseData))
 	return string(responseData)
+}
+
+func GetLicenseFromREADME(readmeText string) string {
+
+	// parse readme for license, return specific license if found, return empty string if not found
+
+	/* unsure about which specific licenses are compatible with LGPLv2.1 license, would like to go through a list of all
+	the compatible licenses if they were known and return the specific license that was found
+	*/
+	if (strings.Contains(readmeText, "License")) && (strings.Contains(readmeText, "MIT")) {
+
+		return "MIT"
+	}
+
+	return ""
+
 }
