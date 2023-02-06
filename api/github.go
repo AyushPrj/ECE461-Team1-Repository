@@ -285,12 +285,25 @@ func GetLicenseFromREADME(readmeText string) string {
 
 	// parse readme for license, return specific license if found, return empty string if not found
 
-	/* unsure about which specific licenses are compatible with LGPLv2.1 license, would like to go through a list of all
-	the compatible licenses if they were known and return the specific license that was found
-	*/
-	if (strings.Contains(readmeText, "License")) && (strings.Contains(readmeText, "MIT")) {
+	licenses := []string{
+		"MIT", "Apache", "BSD 3-Clause",
+		"BSD 2-Clause", "ISC", "BSD Zero Clause",
+		"Boost Software", "UPL", "Universal Permissive",
+		"JSON", "Simple Public", "Copyfree Open Innovation",
+		"Xerox", "Sendmail"}
 
-		return "MIT"
+	if strings.Contains(readmeText, "License") {
+
+		for _, license := range licenses {
+
+			if strings.Contains(readmeText, license) {
+				return license
+			}
+		}
+	}
+
+	if strings.Contains(readmeText, "IBM PowerPC Initialization and Boot Software") || strings.Contains(readmeText, "IBM-pibs") {
+		return "IBM-pibs"
 	}
 
 	return ""

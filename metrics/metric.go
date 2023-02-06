@@ -15,6 +15,10 @@ func getResponsivenessScore(owner, name, TOKEN string) float32 {
 	return float32(closed) / float32(total)
 }
 
+func getLicenseScore() {
+
+}
+
 func GetMetrics(url, TOKEN string) {
 	repo := api.GetRepo(url, TOKEN)
 
