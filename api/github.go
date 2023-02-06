@@ -236,7 +236,8 @@ func GetContributionRatio(url, TOKEN string) float32 {
 
 // Takes in owner, name and TOKEN and outputs the (closed issues, total issues)
 func GetIssuesCount(owner, name, GITHUB_TOKEN string) (int, int) {
-	query := "{\"query\" : \"query{repository(owner: \\\"cloudinary\\\", name: \\\"cloudinary_npm\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
+	// query := "{\"query\" : \"query{repository(owner: \\\"cloudinary\\\", name: \\\"cloudinary_npm\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
+	query := "{\"query\" : \"query{repository(owner: \\\"" + owner + "\\\", name: \\\"" + name + "\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
 
 	respData := (getGraphQLData(query, GITHUB_TOKEN))
 	// fmt.Println(string(respData))
