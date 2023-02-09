@@ -5,6 +5,11 @@ import (
 	"fmt"
 )
 
+const (
+	NPM    = 0
+	GITHUB = 1
+)
+
 func getBusFactor(url, TOKEN string) float32 {
 	// TODO: might have to scale this someway
 	return 1 - api.GetContributionRatio(url, TOKEN)
@@ -28,8 +33,16 @@ func getLicenseScore(repo api.Repo) int {
 
 }
 
-func GetMetrics(url, TOKEN string) {
-	repo := api.GetRepo(url, TOKEN)
+func GetMetrics(siteType int, url string, TOKEN string) {
+	var repo api.Repo
+
+	if siteType == NPM {
+		api.GetGithubURL(url)
+		return
+	} else if siteType == GITHUB {
+		repo = api.GetRepo(url, TOKEN)
+
+	}
 
 	rampUp := -1
 	busFactor := getBusFactor(repo.ContributorsURL, TOKEN)

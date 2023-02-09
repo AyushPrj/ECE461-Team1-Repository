@@ -10,15 +10,13 @@ import (
 	"strings"
 )
 
-type LinkType int64
-
 const (
-	NPM    LinkType = 0
-	GITHUB LinkType = 1
+	NPM    = 0
+	GITHUB = 1
 )
 
-type link struct {
-	site LinkType
+type Link struct {
+	site int
 	name string
 }
 
@@ -73,11 +71,11 @@ func main() {
 	// The method os.File.Close() is called on the os.File object to close the file
 	file.Close()
 
-	var links []link
+	var links []Link
 
 	// A loop iterates through and prints each of the slice values.
 	for _, each_ln := range text {
-		var tmpSite LinkType
+		var tmpSite int
 		var tmpName string
 		gitMatch := strings.Contains(each_ln, "github")
 		if gitMatch {
@@ -89,16 +87,20 @@ func main() {
 			tmpName = npmLinkMatch.FindStringSubmatch(each_ln)[1]
 			tmpSite = 0
 		}
-		newLink := link{site: tmpSite, name: tmpName}
+		newLink := Link{site: tmpSite, name: tmpName}
 		links = append(links, newLink)
 	}
 
 	for _, tst_print := range links {
-		fmt.Printf("%+v\n", tst_print)
+		// fmt.Printf("%+v\n", tst_print)
+		// metrics.GetMetrics(tst_print.name, GITHUB_TOKEN)
+		// if tst_print.site == GITHUB {
+		metrics.GetMetrics(tst_print.site, tst_print.name, GITHUB_TOKEN)
+		// }
 	}
 
 	// GETS ALL THE METRICS IN THIS FUNCTION GIVEN THE URL (ONLY WORKS FOR GITHUB CURRENTLY)
-	metrics.GetMetrics("cloudinary/cloudinary_npm", GITHUB_TOKEN)
+	// metrics.GetMetrics("cloudinary/cloudinary_npm", GITHUB_TOKEN)
 	// metrics.GetMetrics("lodash/lodash", GITHUB_TOKEN)
 	// metrics.GetMetrics("nullivex/nodist", GITHUB_TOKEN)
 }

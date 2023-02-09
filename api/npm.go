@@ -39,7 +39,7 @@ type NPMData struct {
 	License        string `json:"license,omitempty"`
 }
 
-func GetNPMData(pkgName string) NPMData {
+func getNPMData(pkgName string) NPMData {
 	url := "https://registry.npmjs.org/" + pkgName
 	response, err := http.Get(url)
 
@@ -57,4 +57,10 @@ func GetNPMData(pkgName string) NPMData {
 	var responseObject NPMData
 	json.Unmarshal(responseData, &responseObject)
 	return responseObject
+}
+
+func GetGithubURL(pkgName string) string {
+	data := getNPMData(pkgName)
+	fmt.Println(data.Repository.URL)
+	return data.Repository.URL
 }
