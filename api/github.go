@@ -315,6 +315,7 @@ func GetLicenseFromREADME(readmeText string) string {
 func RunClocOnRepo(repo Repo) string {
 
 	cloneString := repo.CloneURL
+	fmt.Printf(cloneString)
 	clone := exec.Command("git", "clone", cloneString)
 	err := clone.Run()
 
@@ -324,6 +325,7 @@ func RunClocOnRepo(repo Repo) string {
 	}
 
 	folderName := "/" + repo.Name
+	fmt.Printf(folderName)
 	cloc := exec.Command(folderName, "gocloc", ".")
 	out, err := cloc.CombinedOutput()
 
