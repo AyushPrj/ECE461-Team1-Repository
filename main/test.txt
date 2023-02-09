@@ -1,2 +1,5 @@
-github.com/Code
-github.com/Node
+https://github.com/cloudinary/cloudinary_npm
+https://www.npmjs.com/package/express
+https://github.com/nullivex/nodist
+https://github.com/lodash/lodash
+https://www.npmjs.com/package/browserify
