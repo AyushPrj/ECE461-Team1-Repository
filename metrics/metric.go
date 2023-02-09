@@ -33,6 +33,14 @@ func getLicenseScore(repo api.Repo) int {
 
 }
 
+func getRampUpScore(repo api.Repo) int {
+
+	clocString := api.RunClocOnRepo(repo)
+	fmt.Printf(clocString)
+
+	return 1
+}
+
 func GetMetrics(siteType int, url string, TOKEN string) {
 	var repo api.Repo
 
@@ -44,7 +52,7 @@ func GetMetrics(siteType int, url string, TOKEN string) {
 
 	}
 
-	rampUp := -1
+	rampUp := getRampUpScore(repo)
 	busFactor := getBusFactor(repo.ContributorsURL, TOKEN)
 	correctness := -1
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name, TOKEN)
