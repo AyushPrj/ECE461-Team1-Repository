@@ -53,6 +53,7 @@ func GetMetrics(siteType int, url string, TOKEN string) {
 	}
 
 	rampUp := getRampUpScore(repo)
+	// rampUp := -1
 	busFactor := getBusFactor(repo.ContributorsURL, TOKEN)
 	correctness := -1
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name, TOKEN)

@@ -330,6 +330,7 @@ func RunClocOnRepo(repo Repo) string {
 	out, err := cloc.CombinedOutput()
 
 	if err != nil {
+		fmt.Printf("could not run cloc command\n")
 		log.Fatal(err)
 	}
 
