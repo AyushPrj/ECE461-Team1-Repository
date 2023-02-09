@@ -21,7 +21,31 @@ type link struct {
 	name string
 }
 
+func writeLog() {
+	logFileLocation := os.Getenv("LOG_FILE")
+	logFileLocation += "/log.txt"
+	fmt.Println("Log file created at: ", logFileLocation) //for debugging purpose. take it out later
+
+	logFile, err := os.Create(logFileLocation)
+	if err != nil {
+		log.Fatalf("Failed to create log file")
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
+
+	// write to the log file
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "0" {
+		log.Println("LOG_LEVEL is set to 0. don't print anything")
+	} else if logLevel == "1" {
+		log.Println("LOG_LEVEL is set to 1. do something meaningful here")
+	} else if logLevel == "2" {
+		log.Println("LOG_LEVEL is set to 2. give more details")
+	}
+}
+
 func main() {
+	//logFile :=os.Getenv("LOG_FILE")
 	args := os.Args[1:]
 	str := strings.Join(args, "")
 	file, err := os.Open(str)
