@@ -85,4 +85,8 @@ func main() {
 	for _, tst_print := range links {
 		fmt.Printf("%+v\n", tst_print)
 	}
+	// GETS ALL THE METRICS IN THIS FUNCTION GIVEN THE URL (ONLY WORKS FOR GITHUB CURRENTLY)
+	metrics.GetMetrics("cloudinary/cloudinary_npm", GITHUB_TOKEN)
+	// metrics.GetMetrics("lodash/lodash", GITHUB_TOKEN)
+	// metrics.GetMetrics("nullivex/nodist", GITHUB_TOKEN)
 }
