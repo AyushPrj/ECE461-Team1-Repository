@@ -293,7 +293,7 @@ func GetLicenseFromREADME(readmeText string) string {
 		"JSON", "Simple Public", "Copyfree Open Innovation",
 		"Xerox", "Sendmail"}
 
-	if strings.Contains(readmeText, "License") {
+	if strings.Contains(readmeText, "License") || strings.Contains(readmeText, "license") {
 
 		for _, license := range licenses {
 
