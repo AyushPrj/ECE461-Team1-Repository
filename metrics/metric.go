@@ -1,8 +1,8 @@
 package metrics
 
 import (
+	"ECE461-Team1-Repository/api"
 	"fmt"
-	"proj/api"
 )
 
 func getBusFactor(url, TOKEN string) float32 {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ECE461-Team1-Repository/metrics"
 	"bufio"
 	"fmt"
 	"log"
@@ -20,6 +21,10 @@ type link struct {
 	site LinkType
 	name string
 }
+
+var GITHUB_TOKEN string
+var LOG_LEVEL string
+var LOG_FILE string
 
 func writeLog() {
 	logFileLocation := os.Getenv("LOG_FILE")
@@ -42,6 +47,12 @@ func writeLog() {
 	} else if logLevel == "2" {
 		log.Println("LOG_LEVEL is set to 2. give more details")
 	}
+}
+
+func init() {
+	GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
+	LOG_LEVEL = os.Getenv("LOG_LEVEL")
+	LOG_FILE = os.Getenv("LOG_FILE")
 }
 
 func main() {
@@ -85,6 +96,7 @@ func main() {
 	for _, tst_print := range links {
 		fmt.Printf("%+v\n", tst_print)
 	}
+
 	// GETS ALL THE METRICS IN THIS FUNCTION GIVEN THE URL (ONLY WORKS FOR GITHUB CURRENTLY)
 	metrics.GetMetrics("cloudinary/cloudinary_npm", GITHUB_TOKEN)
 	// metrics.GetMetrics("lodash/lodash", GITHUB_TOKEN)

@@ -2,7 +2,7 @@
 
 if [ $1 = "install" ]
 then
-go mod init ECE461-Team1-Repository/main
+go mod init ECE461-Team1-Repository
 go mod tidy
 elif [ $1 = 'build' ]
 then
