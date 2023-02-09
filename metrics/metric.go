@@ -15,7 +15,16 @@ func getResponsivenessScore(owner, name, TOKEN string) float32 {
 	return float32(closed) / float32(total)
 }
 
-func getLicenseScore() {
+func getLicenseScore(repo api.Repo) int {
+
+	readme_string := api.GetRawREADME(repo)
+	license_string := api.GetLicenseFromREADME(readme_string)
+
+	if license_string == "" {
+		return 0
+	}
+
+	return 1
 
 }
 
@@ -26,7 +35,7 @@ func GetMetrics(url, TOKEN string) {
 	busFactor := getBusFactor(repo.ContributorsURL, TOKEN)
 	correctness := -1
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name, TOKEN)
-	license := -1
+	license := getLicenseScore(repo)
 
 	fmt.Println("Ramp-up Time:", rampUp)
 	fmt.Println("Bus Factor:", busFactor)
