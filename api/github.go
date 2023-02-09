@@ -319,6 +319,7 @@ func RunClocOnRepo(repo Repo) string {
 	err := clone.Run()
 
 	if err != nil {
+		fmt.Printf("could not clone repo\n")
 		log.Fatal(err)
 	}
 
