@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+if [ $1 = "install" ]
+then
+go mod init ECE461-Team1-Repository/main
+go mod tidy
+elif [ $1 = 'build' ]
+then
+(cd main; go build main.go)
+elif [ $1 = 'test' ]
+then
+echo "Testing..."
+else
+(cd main; ./main $1)
+fi
