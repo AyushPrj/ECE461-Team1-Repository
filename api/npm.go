@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 )
 
 type NPMData struct {
@@ -61,6 +62,11 @@ func getNPMData(pkgName string) NPMData {
 
 func GetGithubURL(pkgName string) string {
 	data := getNPMData(pkgName)
-	fmt.Println(data.Repository.URL)
-	return data.Repository.URL
+	url := data.Repository.URL
+
+	gitLinkMatch := regexp.MustCompile(".*github.com/(.*).git")
+	name := gitLinkMatch.FindStringSubmatch(url)[1]
+
+	fmt.Println(data.License)
+	return name
 }

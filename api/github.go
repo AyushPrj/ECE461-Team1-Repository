@@ -266,9 +266,19 @@ func getReadmeURL(repo Repo) string {
 	return "https://raw.githubusercontent.com/" + repo.FullName + "/" + repo.DefaultBranch + "/README.md"
 }
 
+func getAlternativeReadmeURL(repo Repo) string {
+	return "https://raw.githubusercontent.com/" + repo.FullName + "/" + repo.DefaultBranch + "/Readme.md"
+}
+
 func GetRawREADME(repo Repo) string {
 	url := getReadmeURL(repo)
 	response, err := http.Get(url)
+
+	// Alternative readme url
+	if response.StatusCode == 404 {
+		response, err = http.Get(getAlternativeReadmeURL(repo))
+	}
+
 	if err != nil {
 		fmt.Print(err.Error())
 		os.Exit(1)
