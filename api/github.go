@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -308,5 +309,34 @@ func GetLicenseFromREADME(readmeText string) string {
 	}
 
 	return ""
+
+}
+
+func RunClocOnRepo(repo Repo) string {
+
+	cloneString := repo.CloneURL
+	fmt.Printf(cloneString)
+	clone := exec.Command("git", "clone", cloneString)
+	err := clone.Run()
+
+	if err != nil {
+		fmt.Printf("could not clone repo\n")
+		log.Fatal(err)
+	}
+
+	folderName := "/" + repo.Name
+	fmt.Printf(folderName)
+	cloc := exec.Command(folderName, "gocloc", ".")
+	out, err := cloc.CombinedOutput()
+
+	if err != nil {
+		fmt.Printf("could not run cloc command\n")
+		log.Fatal(err)
+	}
+
+	stringOut := string(out)
+	// fmt.Printf(stringOut)
+
+	return stringOut
 
 }
