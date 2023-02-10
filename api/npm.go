@@ -61,6 +61,7 @@ func getNPMData(pkgName string) NPMData {
 
 func GetGithubURL(pkgName string) string {
 	data := getNPMData(pkgName)
-	fmt.Println(data.Repository.URL)
+	// fmt.Println(data.Repository.URL)
+
 	return data.Repository.URL
 }

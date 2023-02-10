@@ -59,8 +59,8 @@ func main() {
 	str := strings.Join(args, "")
 	file, err := os.Open(str)
 	if err != nil {
-		writeLog("Failed to open file", 1)
-		writeLog("Failed to open file because the name of file was incoreect", 2)
+		// writeLog("Failed to open file", 1)
+		// writeLog("Failed to open file because the name of file was incoreect", 2)
 	}
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)

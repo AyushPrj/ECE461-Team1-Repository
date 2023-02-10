@@ -3,6 +3,7 @@ package metrics
 import (
 	"ECE461-Team1-Repository/api"
 	"fmt"
+	"regexp"
 )
 
 const (
@@ -44,7 +45,10 @@ func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float3
 	var repo api.Repo
 
 	if siteType == NPM {
-		githubURL := api.GetGithubURL(name)
+		giturl := api.GetGithubURL(name)
+		// parse the github url
+		gitLinkMatch := regexp.MustCompile(".*github.com/(.*).git")
+		githubURL := gitLinkMatch.FindStringSubmatch(giturl)[1]
 		repo = api.GetRepo(githubURL, TOKEN)
 		// fmt.Println(repo.FullName)
 	} else if siteType == GITHUB {
