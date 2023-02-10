@@ -29,7 +29,7 @@ var LOG_FILE string
 
 func writeLog(out string, level int) {
 	logFileLocation := LOG_FILE
-	logFileLocation += "/log.txt"
+	// logFileLocation += "/log.txt"
 	fmt.Println("Log file created at: ", logFileLocation) //for debugging purpose. take it out later
 
 	logFile, err := os.Create(logFileLocation)
