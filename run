@@ -11,5 +11,5 @@ elif [ $1 = 'test' ]
 then
 go test -cover
 else
-(cd main; ./main $1)
+(./main/main $1)
 fi
