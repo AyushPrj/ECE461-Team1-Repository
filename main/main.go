@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -16,8 +17,10 @@ const (
 )
 
 type Link struct {
-	site int
-	name string
+	site     int
+	name     string
+	netScore float32
+	ndjson   string
 }
 
 var GITHUB_TOKEN string
@@ -25,7 +28,7 @@ var LOG_LEVEL string
 var LOG_FILE string
 
 func writeLog(out string, level int) {
-	logFileLocation := os.Getenv("LOG_FILE")
+	logFileLocation := LOG_FILE
 	logFileLocation += "/log.txt"
 	fmt.Println("Log file created at: ", logFileLocation) //for debugging purpose. take it out later
 
@@ -85,20 +88,36 @@ func main() {
 			tmpName = npmLinkMatch.FindStringSubmatch(each_ln)[1]
 			tmpSite = 0
 		}
-		newLink := Link{site: tmpSite, name: tmpName}
+
+		// get the metrics in ndjson format for each link and add to list
+		netscore, ndjson := metrics.GetMetrics(each_ln, tmpSite, tmpName, GITHUB_TOKEN)
+		newLink := Link{site: tmpSite, name: tmpName, netScore: netscore, ndjson: ndjson}
 		links = append(links, newLink)
 	}
 
-	for _, tst_print := range links {
-		// fmt.Printf("%+v\n", tst_print)
-		// metrics.GetMetrics(tst_print.name, GITHUB_TOKEN)
-		// if tst_print.site == GITHUB {
-		metrics.GetMetrics(tst_print.site, tst_print.name, GITHUB_TOKEN)
-		// }
-	}
+	// Sort array of links by net score (decending)
+	sort.Slice(links, func(i, j int) bool {
+		return links[i].netScore > links[j].netScore
+	})
+
+	// for _, tst_print := range links {
+	// fmt.Printf("%+v\n", tst_print)
+	// metrics.GetMetrics(tst_print.name, GITHUB_TOKEN)
+	// if tst_print.site == GITHUB {
+	// metrics.GetMetrics(tst_print.site, tst_print.name, GITHUB_TOKEN)
+	// }
+	// }
 
 	// GETS ALL THE METRICS IN THIS FUNCTION GIVEN THE URL (ONLY WORKS FOR GITHUB CURRENTLY)
 	// metrics.GetMetrics("cloudinary/cloudinary_npm", GITHUB_TOKEN)
 	// metrics.GetMetrics("lodash/lodash", GITHUB_TOKEN)
 	// metrics.GetMetrics("nullivex/nodist", GITHUB_TOKEN)
+
+	printOutput(links)
+}
+
+func printOutput(links []Link) {
+	for _, link := range links {
+		fmt.Println(link.ndjson)
+	}
 }
