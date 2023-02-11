@@ -36,7 +36,21 @@ func getLicenseScore(repo api.Repo) int {
 func getRampUpScore(repo api.Repo) int {
 
 	clocString := api.RunClocOnRepo(repo)
-	fmt.Printf(clocString)
+	clocString = "" + clocString
+	// lastDash := len(clocString) - 1
+	// firstDash := lastDash - 80
+
+	// isNumber := true
+
+	// totalLines := 0
+	// totalLinesString := ""
+	// counter := firstDash - 1
+
+	// while(isNumber) {
+	// 	totalLinesString += clocString[counter]
+	// 	counter -= 1
+
+	// 	if(strconv.Atoi(clocString[counter]))
 
 	return 1
 }
@@ -55,8 +69,8 @@ func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float3
 		repo = api.GetRepo(name, TOKEN)
 	}
 
-	// rampUp := getRampUpScore(repo)
-	rampUp := -1.0
+	rampUp := getRampUpScore(repo)
+	//rampUp := -1.0
 	busFactor := getBusFactor(repo.ContributorsURL, TOKEN)
 	correctness := -1.0
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name, TOKEN)

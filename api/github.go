@@ -315,27 +315,35 @@ func GetLicenseFromREADME(readmeText string) string {
 func RunClocOnRepo(repo Repo) string {
 
 	cloneString := repo.CloneURL
-	fmt.Printf(cloneString)
+	fmt.Printf("%s\n", repo.CloneURL)
 	clone := exec.Command("git", "clone", cloneString)
 	err := clone.Run()
 
 	if err != nil {
-		fmt.Printf("could not clone repo\n")
+		fmt.Printf("failed to clone repo\n")
 		log.Fatal(err)
 	}
 
-	folderName := "/" + repo.Name
-	fmt.Printf(folderName)
-	cloc := exec.Command(folderName, "gocloc", ".")
+	folderName := repo.Name + "/"
+	//fmt.Printf(folderName, "\n")
+	cloc := exec.Command("cloc", folderName)
 	out, err := cloc.CombinedOutput()
 
 	if err != nil {
-		fmt.Printf("could not run cloc command\n")
+		fmt.Printf("failed to run cloc command\n")
+		log.Fatal(err)
+	}
+
+	rem := exec.Command("rm", "-r", repo.Name)
+	err = rem.Run()
+
+	if err != nil {
+		fmt.Printf("failed to remove repo folder\n")
 		log.Fatal(err)
 	}
 
 	stringOut := string(out)
-	// fmt.Printf(stringOut)
+	fmt.Printf("\n %s \n", stringOut)
 
 	return stringOut
 
