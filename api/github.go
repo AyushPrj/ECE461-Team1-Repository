@@ -320,7 +320,7 @@ func RunClocOnRepo(repo Repo) string {
 	err := clone.Run()
 
 	if err != nil {
-		fmt.Printf("could not clone repo\n")
+		fmt.Printf("failed to clone repo\n")
 		log.Fatal(err)
 	}
 
@@ -330,12 +330,19 @@ func RunClocOnRepo(repo Repo) string {
 	out, err := cloc.CombinedOutput()
 
 	if err != nil {
-		fmt.Printf("could not run cloc command\n")
+		fmt.Printf("failed to run cloc command\n")
+		log.Fatal(err)
+	}
+
+	rem := exec.Command("rm", "-r", repo.Name)
+	err = rem.Run()
+
+	if err != nil {
+		fmt.Printf("failed to remove repo\n")
 		log.Fatal(err)
 	}
 
 	stringOut := string(out)
-	// fmt.Printf(stringOut)
 
 	return stringOut
 
