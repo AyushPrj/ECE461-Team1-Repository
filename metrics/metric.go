@@ -2,13 +2,9 @@ package metrics
 
 import (
 	"ECE461-Team1-Repository/api"
+	"ECE461-Team1-Repository/log"
 	"fmt"
 	"regexp"
-)
-
-const (
-	NPM    = 0
-	GITHUB = 1
 )
 
 func getBusFactor(url, TOKEN string) float32 {
@@ -44,14 +40,14 @@ func getRampUpScore(repo api.Repo) int {
 func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float32, string) {
 	var repo api.Repo
 
-	if siteType == NPM {
+	if siteType == api.NPM {
 		giturl := api.GetGithubURL(name)
 		// parse the github url
 		gitLinkMatch := regexp.MustCompile(".*github.com/(.*).git")
 		githubURL := gitLinkMatch.FindStringSubmatch(giturl)[1]
 		repo = api.GetRepo(githubURL, TOKEN)
 		// fmt.Println(repo.FullName)
-	} else if siteType == GITHUB {
+	} else if siteType == api.GITHUB {
 		repo = api.GetRepo(name, TOKEN)
 	}
 
@@ -64,16 +60,19 @@ func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float3
 	netScore := (0.1*float32(rampUp) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.3*float32(license)) * float32(license)
 	// multiply by license score
 
-	// TODO: Add to log (info)
-	// fmt.Println("Ramp-up Time:", rampUp)
-	// fmt.Println("Bus Factor:", busFactor)
-	// fmt.Println("Correctness:", correctness)
-	// fmt.Println("Responsiveness:", responsiveness)
-	// fmt.Println("License:", license)
+	// Log (info)
+	log.Printf(log.INFO, "Name: %v", name)
+	log.Printf(log.INFO, "Net Score: %v", netScore)
+	log.Printf(log.INFO, "Ramp-up Time: %v", rampUp)
+	log.Printf(log.INFO, "Bus Factor: %v", busFactor)
+	log.Printf(log.INFO, "Correctness: %v", correctness)
+	log.Printf(log.INFO, "Responsiveness: %#v", responsiveness)
+	log.Printf(log.INFO, "License: %v", license)
 
 	ndjson := `{"URL":"` + baseURL + `", "NET_SCORE":` + fmt.Sprintf("%v", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%v", rampUp) +
 		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) + `, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `}`
-	// fmt.Println(ndjson)
+
+	log.Printf(log.DEBUG, ndjson)
 
 	return netScore, ndjson
 }

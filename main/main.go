@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ECE461-Team1-Repository/api"
 	"ECE461-Team1-Repository/log"
 	"ECE461-Team1-Repository/metrics"
 	"bufio"
@@ -10,11 +11,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-)
-
-const (
-	NPM    = 0
-	GITHUB = 1
 )
 
 type Link struct {
@@ -42,6 +38,7 @@ func main() {
 	}
 	// Close log file after program is complete
 	defer f.Close()
+	defer log.Printf(log.INFO, "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
 
 	golog.SetOutput(f)
 
@@ -73,11 +70,11 @@ func main() {
 		if gitMatch {
 			gitLinkMatch := regexp.MustCompile(".*github.com/(.*)")
 			tmpName = gitLinkMatch.FindStringSubmatch(each_ln)[1]
-			tmpSite = 1
+			tmpSite = api.GITHUB
 		} else {
 			npmLinkMatch := regexp.MustCompile(".*package/(.*)")
 			tmpName = npmLinkMatch.FindStringSubmatch(each_ln)[1]
-			tmpSite = 0
+			tmpSite = api.NPM
 		}
 
 		// get the metrics in ndjson format for each link and add to list
