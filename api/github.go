@@ -1,17 +1,18 @@
 package api
 
 import (
+	"ECE461-Team1-Repository/log"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 )
+
+var GITHUB_TOKEN string
 
 // useful data (name, full_name, default_branch, license, contributions_url)
 type Repo struct {
@@ -145,7 +146,11 @@ type Contributor struct {
 	Contributions int    `json:"contributions"`
 }
 
-func getGraphQLData(query, GITHUB_TOKEN string) []byte {
+func init() {
+	GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
+}
+
+func getGraphQLData(query string) []byte {
 	body := []byte(query)
 
 	req, _ := http.NewRequest(http.MethodPost, "https://api.github.com/graphql", bytes.NewBuffer(body))
@@ -164,13 +169,13 @@ func getGraphQLData(query, GITHUB_TOKEN string) []byte {
 	responseData, err := io.ReadAll(resp.Body)
 	// fmt.Println(string(responseData))
 	if err != nil {
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	return responseData
 }
 
-func getRequest(url, GITHUB_TOKEN string) []byte {
+func getRequest(url string) []byte {
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", "Bearer "+GITHUB_TOKEN)
 	req.Header.Add("Accept", "application/json")
@@ -185,15 +190,15 @@ func getRequest(url, GITHUB_TOKEN string) []byte {
 
 	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	return responseData
 }
 
-func GetRepo(url, GITHUB_TOKEN string) Repo {
+func GetRepo(url string) Repo {
 
-	responseData := getRequest("https://api.github.com/repos/"+url, GITHUB_TOKEN)
+	responseData := getRequest("https://api.github.com/repos/" + url)
 
 	var responseObject Repo
 	json.Unmarshal(responseData, &responseObject)
@@ -223,8 +228,8 @@ func getTotalNumContributions(responseObject []Contributor) int {
 }
 
 // Number of contributions made by the top contributor by the total contributions
-func GetContributionRatio(url, TOKEN string) float32 {
-	respData := getRequest(url, TOKEN)
+func GetContributionRatio(url string) float32 {
+	respData := getRequest(url)
 
 	var responseObject []Contributor
 	json.Unmarshal(respData, &responseObject)
@@ -236,11 +241,11 @@ func GetContributionRatio(url, TOKEN string) float32 {
 }
 
 // Takes in owner, name and TOKEN and outputs the (closed issues, total issues)
-func GetIssuesCount(owner, name, GITHUB_TOKEN string) (int, int) {
+func GetIssuesCount(owner, name string) (int, int) {
 	// query := "{\"query\" : \"query{repository(owner: \\\"cloudinary\\\", name: \\\"cloudinary_npm\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
 	query := "{\"query\" : \"query{repository(owner: \\\"" + owner + "\\\", name: \\\"" + name + "\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
 
-	respData := (getGraphQLData(query, GITHUB_TOKEN))
+	respData := (getGraphQLData(query))
 	// fmt.Println(string(respData))
 
 	type Issue struct {
@@ -263,20 +268,31 @@ func GetIssuesCount(owner, name, GITHUB_TOKEN string) (int, int) {
 }
 
 func getReadmeURL(repo Repo) string {
-	return "https://raw.githubusercontent.com/" + repo.FullName + "/" + repo.DefaultBranch + "/README.md"
+	responseData := getRequest("https://api.github.com/repos/" + repo.FullName + "/readme")
+
+	type ReadmeData struct {
+		Name        string `json:"name"`
+		DownloadURL string `json:"download_url"`
+	}
+
+	var responseObject ReadmeData
+	json.Unmarshal(responseData, &responseObject)
+
+	return responseObject.DownloadURL
+	// return "https://raw.githubusercontent.com/" + repo.FullName + "/" + repo.DefaultBranch + "/README.md"
 }
 
 func GetRawREADME(repo Repo) string {
 	url := getReadmeURL(repo)
 	response, err := http.Get(url)
 	if err != nil {
-		fmt.Print(err.Error())
+		log.Println(log.DEBUG, err.Error())
 		os.Exit(1)
 	}
 
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	// fmt.Println(string(responseData))
@@ -292,7 +308,12 @@ func GetLicenseFromREADME(readmeText string) string {
 		"BSD 2-Clause", "ISC", "BSD Zero Clause",
 		"Boost Software", "UPL", "Universal Permissive",
 		"JSON", "Simple Public", "Copyfree Open Innovation",
-		"Xerox", "Sendmail"}
+		"Xerox", "Sendmail", "All-Permissive", "Artistic",
+		"Berkely Database", "Modified BSD", "CeCILL", "Cryptix General",
+		"Zope Public", "XFree86", "X11", "WxWidgets Library", "WTFPL",
+		"WebM", "Unlicense", "StandardMLofNJ", "Ruby", "SGI Free Software",
+		"Python", "Ruby", "Perl", "OpenLDAP", "Netscape Javascript", "NCSA",
+		"Mozilla Public", "Intel Open Source"}
 
 	if strings.Contains(readmeText, "License") || strings.Contains(readmeText, "license") {
 
@@ -315,28 +336,61 @@ func GetLicenseFromREADME(readmeText string) string {
 func RunClocOnRepo(repo Repo) string {
 
 	cloneString := repo.CloneURL
-	fmt.Printf(cloneString)
+	// fmt.Printf(repo.CloneURL)
 	clone := exec.Command("git", "clone", cloneString)
 	err := clone.Run()
 
 	if err != nil {
-		fmt.Printf("could not clone repo\n")
-		log.Fatal(err)
+		// fmt.Printf("failed to clone repo\n")
+		log.Println(log.DEBUG, err)
 	}
 
-	folderName := "/" + repo.Name
-	fmt.Printf(folderName)
-	cloc := exec.Command(folderName, "gocloc", ".")
+	folderName := repo.Name + "/"
+	//fmt.Printf(folderName, "\n")
+	cloc := exec.Command("cloc", folderName)
 	out, err := cloc.CombinedOutput()
 
 	if err != nil {
-		fmt.Printf("could not run cloc command\n")
-		log.Fatal(err)
+		// fmt.Printf("failed to run cloc command\n")
+		log.Println(log.DEBUG, err)
 	}
 
 	stringOut := string(out)
-	// fmt.Printf(stringOut)
+	log.Println(log.DEBUG, stringOut)
+	// fmt.Printf("\n %s \n", stringOut)
 
 	return stringOut
+
+}
+
+func CheckRepoForTest(repo Repo) float64 {
+
+	testFound := 0.0
+	temp, err := os.ReadDir(repo.Name)
+
+	if err != nil {
+		// fmt.Printf("unable to read repo name\n")
+		log.Println(log.DEBUG, err)
+	}
+
+	for _, val := range temp {
+
+		currentFile := val.Name()
+
+		if currentFile == "test" {
+			testFound = 1.0
+			break
+		}
+	}
+
+	rem := exec.Command("rm", "-r", repo.Name)
+	err = rem.Run()
+
+	if err != nil {
+		// fmt.Printf("failed to remove repo folder\n")
+		log.Println(log.DEBUG, err)
+	}
+
+	return testFound
 
 }

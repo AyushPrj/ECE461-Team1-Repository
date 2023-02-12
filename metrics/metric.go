@@ -5,15 +5,16 @@ import (
 	"ECE461-Team1-Repository/log"
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
-func getBusFactor(url, TOKEN string) float32 {
+func getBusFactor(url string) float32 {
 	// TODO: might have to scale this someway
-	return 1 - api.GetContributionRatio(url, TOKEN)
+	return 1 - api.GetContributionRatio(url)
 }
 
-func getResponsivenessScore(owner, name, TOKEN string) float32 {
-	closed, total := api.GetIssuesCount(owner, name, TOKEN)
+func getResponsivenessScore(owner, name string) float32 {
+	closed, total := api.GetIssuesCount(owner, name)
 	return float32(closed) / float32(total)
 }
 
@@ -29,15 +30,39 @@ func getLicenseScore(repo api.Repo) int {
 
 }
 
-func getRampUpScore(repo api.Repo) int {
+func getCorrectnessScore(repo api.Repo) float64 {
 
-	clocString := api.RunClocOnRepo(repo)
-	fmt.Printf(clocString)
-
-	return 1
+	return api.CheckRepoForTest(repo)
 }
 
-func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float32, string) {
+func getRampUpScore(repo api.Repo) float32 {
+
+	clocString := api.RunClocOnRepo(repo)
+	regMatch := regexp.MustCompile(`.*SUM:\s*\d*\s*\d*\s*(\d*)\s*(\d*)`)
+	commentLines := regMatch.FindStringSubmatch(clocString)[1]
+	codeLines := regMatch.FindStringSubmatch(clocString)[2]
+
+	commentLinesVal, err := strconv.Atoi(commentLines)
+
+	if err != nil {
+		log.Println(log.DEBUG, err)
+	}
+
+	codeLinesVal, err := strconv.Atoi(codeLines)
+
+	if err != nil {
+		log.Println(log.DEBUG, err)
+	}
+
+	var score float32
+	score = float32(commentLinesVal) / float32(codeLinesVal)
+	// fmt.Printf("score: %f\n", score)
+	// insert scaling factor here
+
+	return score
+}
+
+func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	var repo api.Repo
 
 	if siteType == api.NPM {
@@ -45,19 +70,21 @@ func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float3
 		// parse the github url
 		gitLinkMatch := regexp.MustCompile(".*github.com/(.*).git")
 		githubURL := gitLinkMatch.FindStringSubmatch(giturl)[1]
-		repo = api.GetRepo(githubURL, TOKEN)
+		repo = api.GetRepo(githubURL)
 		// fmt.Println(repo.FullName)
 	} else if siteType == api.GITHUB {
-		repo = api.GetRepo(name, TOKEN)
+		repo = api.GetRepo(name)
+		// fmt.Println(repo.Name)
 	}
 
-	// rampUp := getRampUpScore(repo)
-	rampUp := -1.0
-	busFactor := getBusFactor(repo.ContributorsURL, TOKEN)
-	correctness := -1.0
-	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name, TOKEN)
+	// fmt.Println(repo.CloneURL)
+	rampUp := getRampUpScore(repo)
+	//rampUp := -1.0
+	correctness := getCorrectnessScore(repo)
+	busFactor := getBusFactor(repo.ContributorsURL)
+	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
 	license := getLicenseScore(repo)
-	netScore := (0.1*float32(rampUp) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.3*float32(license)) * float32(license)
+	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
 	// multiply by license score
 
 	// Log (info)
