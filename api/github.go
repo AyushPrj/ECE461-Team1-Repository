@@ -214,6 +214,11 @@ func getTopContributor(responseObject []Contributor) Contributor {
 	return responseObject[0]
 }
 
+/*
+getTotalNumContributions is a simple function that iterates through a list of Contributors
+and sums each Contributor's number of contributions.
+*/
+
 func getTotalNumContributions(responseObject []Contributor) int {
 
 	totalNumContributions := 0
@@ -299,6 +304,12 @@ func GetRawREADME(repo Repo) string {
 	return string(responseData)
 }
 
+/*
+GetLicenseFromREADME takes in the raw contents of a README.md file in a string variable. The
+README is checked for one of many licenses compatible with the LGPLv2.1 license. If the function
+finds a specific compatible license, it returns that license, otherwise it returns an empty string.
+*/
+
 func GetLicenseFromREADME(readmeText string) string {
 
 	// parse readme for license, return specific license if found, return empty string if not found
@@ -333,6 +344,13 @@ func GetLicenseFromREADME(readmeText string) string {
 
 }
 
+/*
+RunClocOnRepo makes use of the cloc bash command readily available on eceprog. 
+A repository is cloned into the directory, cloc is run on that directory, and
+the cloc output is stored inside a string variable. The repository is cleaned up
+in CheckRepoForTest, which also makes use of the cloned repository.
+*/
+
 func RunClocOnRepo(repo Repo) string {
 
 	cloneString := repo.CloneURL
@@ -363,6 +381,14 @@ func RunClocOnRepo(repo Repo) string {
 
 }
 
+/*
+CheckRepoForTest works off of the repository cloned in RunClocOnRepo. 
+os.ReadDir returns a list of DirEntry objects of a folder, which lists
+a few attributes of every file/folder in the given folder name, including
+its name. We can use the names to check if a test suite/test folder exists
+in the repository, assigning a score of 1 or 0 based on if it does or does
+not exist. The cloned repository is also cleaned up in this function.
+*/
 func CheckRepoForTest(repo Repo) float64 {
 
 	testFound := 0.0

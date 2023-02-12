@@ -18,6 +18,8 @@ func getResponsivenessScore(owner, name string) float32 {
 	return float32(closed) / float32(total)
 }
 
+
+//getLicenseScore checks if the output of GetLicenseFromREADME is blank, and assigns 0 or 1 accordingly
 func getLicenseScore(repo api.Repo) int {
 	readme_string := api.GetRawREADME(repo)
 	license_string := api.GetLicenseFromREADME(readme_string)
@@ -35,6 +37,12 @@ func getCorrectnessScore(repo api.Repo) float64 {
 	return api.CheckRepoForTest(repo)
 }
 
+/*
+getRampUpScore uses the output of RunClocOnRepo, which is the output of cloc. The function
+parses the string using a regex and pulls the last 2 numerical values from the string, the 
+number of commented lines of code and the total number of lines of code. The ratio of these
+2 values is used as the score for ramp-up time.
+*/
 func getRampUpScore(repo api.Repo) float32 {
 
 	clocString := api.RunClocOnRepo(repo)
