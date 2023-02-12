@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var GITHUB_TOKEN string
+
 // useful data (name, full_name, default_branch, license, contributions_url)
 type Repo struct {
 	ID       int    `json:"id"`
@@ -145,7 +147,11 @@ type Contributor struct {
 	Contributions int    `json:"contributions"`
 }
 
-func getGraphQLData(query, GITHUB_TOKEN string) []byte {
+func init() {
+	GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
+}
+
+func getGraphQLData(query string) []byte {
 	body := []byte(query)
 
 	req, _ := http.NewRequest(http.MethodPost, "https://api.github.com/graphql", bytes.NewBuffer(body))
@@ -170,7 +176,7 @@ func getGraphQLData(query, GITHUB_TOKEN string) []byte {
 	return responseData
 }
 
-func getRequest(url, GITHUB_TOKEN string) []byte {
+func getRequest(url string) []byte {
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", "Bearer "+GITHUB_TOKEN)
 	req.Header.Add("Accept", "application/json")
@@ -191,9 +197,9 @@ func getRequest(url, GITHUB_TOKEN string) []byte {
 	return responseData
 }
 
-func GetRepo(url, GITHUB_TOKEN string) Repo {
+func GetRepo(url string) Repo {
 
-	responseData := getRequest("https://api.github.com/repos/"+url, GITHUB_TOKEN)
+	responseData := getRequest("https://api.github.com/repos/" + url)
 
 	var responseObject Repo
 	json.Unmarshal(responseData, &responseObject)
@@ -223,8 +229,8 @@ func getTotalNumContributions(responseObject []Contributor) int {
 }
 
 // Number of contributions made by the top contributor by the total contributions
-func GetContributionRatio(url, TOKEN string) float32 {
-	respData := getRequest(url, TOKEN)
+func GetContributionRatio(url string) float32 {
+	respData := getRequest(url)
 
 	var responseObject []Contributor
 	json.Unmarshal(respData, &responseObject)
@@ -236,11 +242,11 @@ func GetContributionRatio(url, TOKEN string) float32 {
 }
 
 // Takes in owner, name and TOKEN and outputs the (closed issues, total issues)
-func GetIssuesCount(owner, name, GITHUB_TOKEN string) (int, int) {
+func GetIssuesCount(owner, name string) (int, int) {
 	// query := "{\"query\" : \"query{repository(owner: \\\"cloudinary\\\", name: \\\"cloudinary_npm\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
 	query := "{\"query\" : \"query{repository(owner: \\\"" + owner + "\\\", name: \\\"" + name + "\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
 
-	respData := (getGraphQLData(query, GITHUB_TOKEN))
+	respData := (getGraphQLData(query))
 	// fmt.Println(string(respData))
 
 	type Issue struct {
@@ -263,7 +269,18 @@ func GetIssuesCount(owner, name, GITHUB_TOKEN string) (int, int) {
 }
 
 func getReadmeURL(repo Repo) string {
-	return "https://raw.githubusercontent.com/" + repo.FullName + "/" + repo.DefaultBranch + "/README.md"
+	responseData := getRequest("https://api.github.com/repos/" + repo.FullName + "/readme")
+
+	type ReadmeData struct {
+		Name        string `json:"name"`
+		DownloadURL string `json:"download_url"`
+	}
+
+	var responseObject ReadmeData
+	json.Unmarshal(responseData, &responseObject)
+
+	return responseObject.DownloadURL
+	// return "https://raw.githubusercontent.com/" + repo.FullName + "/" + repo.DefaultBranch + "/README.md"
 }
 
 func GetRawREADME(repo Repo) string {
@@ -294,7 +311,7 @@ func GetLicenseFromREADME(readmeText string) string {
 		"JSON", "Simple Public", "Copyfree Open Innovation",
 		"Xerox", "Sendmail", "All-Permissive", "Artistic",
 		"Berkely Database", "Modified BSD", "CeCILL", "Cryptix General",
-		"Zope Public", "XFree86", "X11", "WxWidgets Library", "WTFPL", 
+		"Zope Public", "XFree86", "X11", "WxWidgets Library", "WTFPL",
 		"WebM", "Unlicense", "StandardMLofNJ", "Ruby", "SGI Free Software",
 		"Python", "Ruby", "Perl", "OpenLDAP", "Netscape Javascript", "NCSA",
 		"Mozilla Public", "Intel Open Source"}
@@ -347,7 +364,6 @@ func RunClocOnRepo(repo Repo) string {
 
 }
 
-
 func CheckRepoForTest(repo Repo) float64 {
 
 	testFound := 0.0
@@ -366,7 +382,7 @@ func CheckRepoForTest(repo Repo) float64 {
 			testFound = 1.0
 		}
 	}
-	
+
 	rem := exec.Command("rm", "-r", repo.Name)
 	err = rem.Run()
 

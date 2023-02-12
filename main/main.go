@@ -25,7 +25,7 @@ var LOG_LEVEL string
 var LOG_FILE string
 
 func init() {
-	GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
+	GITHUB_TOKEN = api.GITHUB_TOKEN
 	LOG_LEVEL = log.LOG_LEVEL
 	LOG_FILE = log.LOG_FILE
 }
@@ -76,10 +76,10 @@ func main() {
 			tmpName = npmLinkMatch.FindStringSubmatch(each_ln)[1]
 			tmpSite = api.NPM
 		}
-		
+
 		// get the metrics in ndjson format for each link and add to list
 		// fmt.Printf("%s\n", tmpName)
-		netscore, ndjson := metrics.GetMetrics(each_ln, tmpSite, tmpName, GITHUB_TOKEN)
+		netscore, ndjson := metrics.GetMetrics(each_ln, tmpSite, tmpName)
 		newLink := Link{site: tmpSite, name: tmpName, netScore: netscore, ndjson: ndjson}
 		links = append(links, newLink)
 	}

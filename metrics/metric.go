@@ -8,13 +8,13 @@ import (
 	"strconv"
 )
 
-func getBusFactor(url, TOKEN string) float32 {
+func getBusFactor(url string) float32 {
 	// TODO: might have to scale this someway
-	return 1 - api.GetContributionRatio(url, TOKEN)
+	return 1 - api.GetContributionRatio(url)
 }
 
-func getResponsivenessScore(owner, name, TOKEN string) float32 {
-	closed, total := api.GetIssuesCount(owner, name, TOKEN)
+func getResponsivenessScore(owner, name string) float32 {
+	closed, total := api.GetIssuesCount(owner, name)
 	return float32(closed) / float32(total)
 }
 
@@ -62,7 +62,7 @@ func getRampUpScore(repo api.Repo) float32 {
 	return score
 }
 
-func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float32, string) {
+func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	var repo api.Repo
 
 	if siteType == api.NPM {
@@ -70,10 +70,10 @@ func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float3
 		// parse the github url
 		gitLinkMatch := regexp.MustCompile(".*github.com/(.*).git")
 		githubURL := gitLinkMatch.FindStringSubmatch(giturl)[1]
-		repo = api.GetRepo(githubURL, TOKEN)
+		repo = api.GetRepo(githubURL)
 		// fmt.Println(repo.FullName)
 	} else if siteType == api.GITHUB {
-		repo = api.GetRepo(name, TOKEN)
+		repo = api.GetRepo(name)
 		// fmt.Println(repo.Name)
 	}
 
@@ -81,8 +81,8 @@ func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float3
 	rampUp := getRampUpScore(repo)
 	//rampUp := -1.0
 	correctness := getCorrectnessScore(repo)
-	busFactor := getBusFactor(repo.ContributorsURL, TOKEN)
-	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name, TOKEN)
+	busFactor := getBusFactor(repo.ContributorsURL)
+	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
 	license := getLicenseScore(repo)
 	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
 	// multiply by license score
