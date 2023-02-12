@@ -96,7 +96,7 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	log.Printf(log.INFO, "Responsiveness: %#v", responsiveness)
 	log.Printf(log.INFO, "License: %v", license)
 
-	ndjson := `{"URL":"` + baseURL + `", "NET_SCORE":` + fmt.Sprintf("%v", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%v", rampUp) +
+	ndjson := `{"URL":"` + baseURL + `", "NET_SCORE":` + fmt.Sprintf("%.2f", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%.2f", rampUp) +
 		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) + `, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `}`
 
 	log.Printf(log.DEBUG, ndjson)
