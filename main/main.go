@@ -32,7 +32,7 @@ func init() {
 
 func main() {
 	// Initialize the log file
-	f, err := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(LOG_FILE+"/logfile.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil && LOG_LEVEL != "0" {
 		golog.Fatalf("error opening log file: %v", err)
 	}
