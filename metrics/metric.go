@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"log"
 )
 
 func getBusFactor(url, TOKEN string) float32 {
@@ -46,13 +45,13 @@ func getRampUpScore(repo api.Repo) float32 {
 	commentLinesVal, err := strconv.Atoi(commentLines)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	codeLinesVal, err := strconv.Atoi(codeLines)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	var score float32
