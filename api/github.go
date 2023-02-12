@@ -4,7 +4,6 @@ import (
 	"ECE461-Team1-Repository/log"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -287,7 +286,7 @@ func GetRawREADME(repo Repo) string {
 	url := getReadmeURL(repo)
 	response, err := http.Get(url)
 	if err != nil {
-		fmt.Print(err.Error())
+		log.Println(log.DEBUG, err.Error())
 		os.Exit(1)
 	}
 
@@ -342,7 +341,7 @@ func RunClocOnRepo(repo Repo) string {
 	err := clone.Run()
 
 	if err != nil {
-		fmt.Printf("failed to clone repo\n")
+		// fmt.Printf("failed to clone repo\n")
 		log.Println(log.DEBUG, err)
 	}
 
@@ -352,7 +351,7 @@ func RunClocOnRepo(repo Repo) string {
 	out, err := cloc.CombinedOutput()
 
 	if err != nil {
-		fmt.Printf("failed to run cloc command\n")
+		// fmt.Printf("failed to run cloc command\n")
 		log.Println(log.DEBUG, err)
 	}
 
@@ -370,7 +369,7 @@ func CheckRepoForTest(repo Repo) float64 {
 	temp, err := os.ReadDir(repo.Name)
 
 	if err != nil {
-		fmt.Printf("unable to read repo name\n")
+		// fmt.Printf("unable to read repo name\n")
 		log.Println(log.DEBUG, err)
 	}
 
@@ -380,6 +379,7 @@ func CheckRepoForTest(repo Repo) float64 {
 
 		if currentFile == "test" {
 			testFound = 1.0
+			break
 		}
 	}
 
@@ -387,7 +387,7 @@ func CheckRepoForTest(repo Repo) float64 {
 	err = rem.Run()
 
 	if err != nil {
-		fmt.Printf("failed to remove repo folder\n")
+		// fmt.Printf("failed to remove repo folder\n")
 		log.Println(log.DEBUG, err)
 	}
 
