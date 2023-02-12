@@ -66,8 +66,30 @@ func getRampUpScore(repo api.Repo) float32 {
 	score = float32(commentLinesVal) / float32(codeLinesVal)
 	// fmt.Printf("score: %f\n", score)
 	// insert scaling factor here
+	score = RampUpScaler(score)
 
 	return score
+}
+
+/*
+RampUpScaler inputs the raw ramp up score (lines of comments / lines of code) and scales it
+through a piecewise function based on common comment standards. The output remains between 0 and 1.
+*/
+
+func RampUpScaler(score float32) float32 {
+
+	if score <= 0.1 {
+		return score
+	} else if score > 0.1 && score <= 0.25 {
+		return 4 * score
+	} else {
+		var denomConst float32 = 0.5625
+		score = (score - 0.25) * (score - 0.25)
+		score *= -1
+		score = score / denomConst + 1
+		return score
+	}
+
 }
 
 func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
