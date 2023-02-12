@@ -292,7 +292,12 @@ func GetLicenseFromREADME(readmeText string) string {
 		"BSD 2-Clause", "ISC", "BSD Zero Clause",
 		"Boost Software", "UPL", "Universal Permissive",
 		"JSON", "Simple Public", "Copyfree Open Innovation",
-		"Xerox", "Sendmail"}
+		"Xerox", "Sendmail", "All-Permissive", "Artistic",
+		"Berkely Database", "Modified BSD", "CeCILL", "Cryptix General",
+		"Zope Public", "XFree86", "X11", "WxWidgets Library", "WTFPL", 
+		"WebM", "Unlicense", "StandardMLofNJ", "Ruby", "SGI Free Software",
+		"Python", "Ruby", "Perl", "OpenLDAP", "Netscape Javascript", "NCSA",
+		"Mozilla Public", "Intel Open Source"}
 
 	if strings.Contains(readmeText, "License") || strings.Contains(readmeText, "license") {
 
@@ -315,7 +320,7 @@ func GetLicenseFromREADME(readmeText string) string {
 func RunClocOnRepo(repo Repo) string {
 
 	cloneString := repo.CloneURL
-	fmt.Printf("%s\n", repo.CloneURL)
+	// fmt.Printf(repo.CloneURL)
 	clone := exec.Command("git", "clone", cloneString)
 	err := clone.Run()
 
@@ -334,6 +339,33 @@ func RunClocOnRepo(repo Repo) string {
 		log.Fatal(err)
 	}
 
+	stringOut := string(out)
+	// fmt.Printf("\n %s \n", stringOut)
+
+	return stringOut
+
+}
+
+
+func CheckRepoForTest(repo Repo) float64 {
+
+	testFound := 0.0
+	temp, err := os.ReadDir(repo.Name)
+
+	if err != nil {
+		fmt.Printf("unable to read repo name\n")
+		log.Fatal(err)
+	}
+
+	for _, val := range temp {
+
+		currentFile := val.Name()
+
+		if currentFile == "test" {
+			testFound = 1.0
+		}
+	}
+	
 	rem := exec.Command("rm", "-r", repo.Name)
 	err = rem.Run()
 
@@ -342,9 +374,6 @@ func RunClocOnRepo(repo Repo) string {
 		log.Fatal(err)
 	}
 
-	stringOut := string(out)
-	fmt.Printf("\n %s \n", stringOut)
-
-	return stringOut
+	return testFound
 
 }

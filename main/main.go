@@ -90,7 +90,7 @@ func main() {
 		}
 		
 		// get the metrics in ndjson format for each link and add to list
-		fmt.Printf("%s\n", tmpName)
+		// fmt.Printf("%s\n", tmpName)
 		netscore, ndjson := metrics.GetMetrics(each_ln, tmpSite, tmpName, GITHUB_TOKEN)
 		newLink := Link{site: tmpSite, name: tmpName, netScore: netscore, ndjson: ndjson}
 		links = append(links, newLink)

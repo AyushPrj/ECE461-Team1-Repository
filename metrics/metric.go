@@ -4,6 +4,8 @@ import (
 	"ECE461-Team1-Repository/api"
 	"fmt"
 	"regexp"
+	"strconv"
+	"log"
 )
 
 const (
@@ -33,26 +35,36 @@ func getLicenseScore(repo api.Repo) int {
 
 }
 
-func getRampUpScore(repo api.Repo) int {
+func getCorrectnessScore(repo api.Repo) float64 {
+
+	return api.CheckRepoForTest(repo)
+}
+
+func getRampUpScore(repo api.Repo) float32 {
 
 	clocString := api.RunClocOnRepo(repo)
-	clocString = "" + clocString
-	// lastDash := len(clocString) - 1
-	// firstDash := lastDash - 80
+	regMatch := regexp.MustCompile(`.*SUM:\s*\d*\s*\d*\s*(\d*)\s*(\d*)`)
+	commentLines := regMatch.FindStringSubmatch(clocString)[1]
+	codeLines := regMatch.FindStringSubmatch(clocString)[2]
 
-	// isNumber := true
+	commentLinesVal, err := strconv.Atoi(commentLines)
 
-	// totalLines := 0
-	// totalLinesString := ""
-	// counter := firstDash - 1
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// while(isNumber) {
-	// 	totalLinesString += clocString[counter]
-	// 	counter -= 1
+	codeLinesVal, err := strconv.Atoi(codeLines)
 
-	// 	if(strconv.Atoi(clocString[counter]))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	return 1
+	var score float32
+	score = float32(commentLinesVal) / float32(codeLinesVal)
+	// fmt.Printf("score: %f\n", score)
+	// insert scaling factor here
+
+	return score
 }
 
 func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float32, string) {
@@ -67,15 +79,17 @@ func GetMetrics(baseURL string, siteType int, name string, TOKEN string) (float3
 		// fmt.Println(repo.FullName)
 	} else if siteType == GITHUB {
 		repo = api.GetRepo(name, TOKEN)
+		// fmt.Println(repo.Name)
 	}
 
+	// fmt.Println(repo.CloneURL)
 	rampUp := getRampUpScore(repo)
 	//rampUp := -1.0
+	correctness := getCorrectnessScore(repo)
 	busFactor := getBusFactor(repo.ContributorsURL, TOKEN)
-	correctness := -1.0
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name, TOKEN)
 	license := getLicenseScore(repo)
-	netScore := (0.1*float32(rampUp) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.3*float32(license)) * float32(license)
+	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
 	// multiply by license score
 
 	// TODO: Add to log (info)
