@@ -6,7 +6,10 @@ import (
 	"ECE461-Team1-Repository/metrics"
 	"bufio"
 	"fmt"
+<<<<<<< Updated upstream
 	golog "log"
+=======
+>>>>>>> Stashed changes
 	"os"
 	"regexp"
 	"sort"
@@ -24,6 +27,30 @@ var GITHUB_TOKEN string
 var LOG_LEVEL string
 var LOG_FILE string
 
+<<<<<<< Updated upstream
+=======
+/*
+	func writeLog(out string, level int) {
+		logFileLocation := LOG_FILE
+		// logFileLocation += "/log.txt"
+		fmt.Println("Log file created at: ", logFileLocation) //for debugging purpose. take it out later
+
+		logFile, err := os.Create(logFileLocation)
+		if err != nil {
+			log.Fatalf("Failed to create log file")
+		}
+		defer logFile.Close()
+		log.SetOutput(logFile)
+
+		// write to the log file
+		if LOG_LEVEL == "2" {
+			log.Println(out)
+		} else if LOG_LEVEL == string(level) {
+			log.Println(out)
+		}
+	}
+*/
+>>>>>>> Stashed changes
 func init() {
 	GITHUB_TOKEN = api.GITHUB_TOKEN
 	LOG_LEVEL = log.LOG_LEVEL
@@ -110,4 +137,8 @@ func printOutput(links []Link) {
 	for _, link := range links {
 		fmt.Println(link.ndjson)
 	}
+}
+
+func Add(x, y int) int {
+	return x + y
 }
