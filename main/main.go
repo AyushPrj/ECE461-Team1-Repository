@@ -1,10 +1,11 @@
 package main
 
 import (
+	"ECE461-Team1-Repository/log"
 	"ECE461-Team1-Repository/metrics"
 	"bufio"
 	"fmt"
-	"log"
+	golog "log"
 	"os"
 	"regexp"
 	"sort"
@@ -27,40 +28,30 @@ var GITHUB_TOKEN string
 var LOG_LEVEL string
 var LOG_FILE string
 
-func writeLog(out string, level int) {
-	logFileLocation := LOG_FILE
-	// logFileLocation += "/log.txt"
-	fmt.Println("Log file created at: ", logFileLocation) //for debugging purpose. take it out later
-
-	logFile, err := os.Create(logFileLocation)
-	if err != nil {
-		log.Fatalf("Failed to create log file")
-	}
-	defer logFile.Close()
-	log.SetOutput(logFile)
-
-	// write to the log file
-	if LOG_LEVEL == "2" {
-		log.Println(out)
-	} else if LOG_LEVEL == string(level) {
-		log.Println(out)
-	}
-}
-
 func init() {
 	GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
-	LOG_LEVEL = os.Getenv("LOG_LEVEL")
+	LOG_LEVEL = log.LOG_LEVEL
 	LOG_FILE = os.Getenv("LOG_FILE")
 }
 
 func main() {
-	//logFile :=os.Getenv("LOG_FILE")
+	// Initialize the log file
+	f, err := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil && LOG_LEVEL != "0" {
+		golog.Fatalf("error opening log file: %v", err)
+	}
+	// Close log file after program is complete
+	defer f.Close()
+
+	golog.SetOutput(f)
+
+	log.Printf(log.INFO, "LOG LEVEL: %v", LOG_LEVEL)
+
 	args := os.Args[1:]
 	str := strings.Join(args, "")
 	file, err := os.Open(str)
 	if err != nil {
-		// writeLog("Failed to open file", 1)
-		// writeLog("Failed to open file because the name of file was incoreect", 2)
+		log.Println(log.INFO, "Failed to open input file")
 	}
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
@@ -113,6 +104,7 @@ func main() {
 	// metrics.GetMetrics("lodash/lodash", GITHUB_TOKEN)
 	// metrics.GetMetrics("nullivex/nodist", GITHUB_TOKEN)
 
+	// Display the metrics in the stored ndjson format
 	printOutput(links)
 }
 
