@@ -1,11 +1,11 @@
 package api
 
 import (
+	"ECE461-Team1-Repository/log"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -164,7 +164,7 @@ func getGraphQLData(query, GITHUB_TOKEN string) []byte {
 	responseData, err := io.ReadAll(resp.Body)
 	// fmt.Println(string(responseData))
 	if err != nil {
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	return responseData
@@ -185,7 +185,7 @@ func getRequest(url, GITHUB_TOKEN string) []byte {
 
 	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	return responseData
@@ -276,7 +276,7 @@ func GetRawREADME(repo Repo) string {
 
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	// fmt.Println(string(responseData))
@@ -326,7 +326,7 @@ func RunClocOnRepo(repo Repo) string {
 
 	if err != nil {
 		fmt.Printf("failed to clone repo\n")
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	folderName := repo.Name + "/"
@@ -336,10 +336,11 @@ func RunClocOnRepo(repo Repo) string {
 
 	if err != nil {
 		fmt.Printf("failed to run cloc command\n")
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	stringOut := string(out)
+	log.Println(log.DEBUG, stringOut)
 	// fmt.Printf("\n %s \n", stringOut)
 
 	return stringOut
@@ -354,7 +355,7 @@ func CheckRepoForTest(repo Repo) float64 {
 
 	if err != nil {
 		fmt.Printf("unable to read repo name\n")
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	for _, val := range temp {
@@ -371,7 +372,7 @@ func CheckRepoForTest(repo Repo) float64 {
 
 	if err != nil {
 		fmt.Printf("failed to remove repo folder\n")
-		log.Fatal(err)
+		log.Println(log.DEBUG, err)
 	}
 
 	return testFound
