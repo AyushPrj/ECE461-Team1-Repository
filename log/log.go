@@ -12,9 +12,11 @@ const (
 )
 
 var LOG_LEVEL string
+var LOG_FILE string
 
 func init() {
 	LOG_LEVEL = os.Getenv("LOG_LEVEL")
+	LOG_FILE = os.Getenv("LOG_FILE") + "/logfile.log"
 }
 
 func shouldLog(mode string) bool {
