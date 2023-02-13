@@ -155,8 +155,6 @@ func getGraphQLData(query string) []byte {
 
 	req, _ := http.NewRequest(http.MethodPost, "https://api.github.com/graphql", bytes.NewBuffer(body))
 	req.Header.Set("Authorization", "Bearer "+GITHUB_TOKEN)
-	// req.Header.Add("Accept", "application/json")
-	// req.Header.Add("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -167,7 +165,6 @@ func getGraphQLData(query string) []byte {
 	defer resp.Body.Close()
 
 	responseData, err := io.ReadAll(resp.Body)
-	// fmt.Println(string(responseData))
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
@@ -192,24 +189,18 @@ func getRequest(url string) []byte {
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
-
 	return responseData
 }
 
 func GetRepo(url string) Repo {
-
 	responseData := getRequest("https://api.github.com/repos/" + url)
 
 	var responseObject Repo
 	json.Unmarshal(responseData, &responseObject)
-	// fmt.Println(responseObject.License == nil)
-	// topContributor := getTopContributor(responseObject.ContributorsURL, GITHUB_TOKEN)
-	// fmt.Println(topContributor)
 	return responseObject
 }
 
 func getTopContributor(responseObject []Contributor) Contributor {
-
 	// Return top contributor
 	return responseObject[0]
 }
@@ -224,7 +215,6 @@ func getTotalNumContributions(responseObject []Contributor) int {
 	totalNumContributions := 0
 
 	for i := 0; i < len(responseObject); i++ {
-
 		totalNumContributions += responseObject[i].Contributions
 	}
 
@@ -241,17 +231,18 @@ func GetContributionRatio(url string) float32 {
 
 	top := getTopContributor(responseObject).Contributions
 	total := getTotalNumContributions(responseObject)
-
-	return float32(top) / float32(total)
+	if float32(total) != 0.0 {
+		return float32(top) / float32(total)
+	} else {
+		return 0
+	}
 }
 
 // Takes in owner, name and TOKEN and outputs the (closed issues, total issues)
 func GetIssuesCount(owner, name string) (int, int) {
-	// query := "{\"query\" : \"query{repository(owner: \\\"cloudinary\\\", name: \\\"cloudinary_npm\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
 	query := "{\"query\" : \"query{repository(owner: \\\"" + owner + "\\\", name: \\\"" + name + "\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
 
 	respData := (getGraphQLData(query))
-	// fmt.Println(string(respData))
 
 	type Issue struct {
 		Data struct {
@@ -300,7 +291,6 @@ func GetRawREADME(repo Repo) string {
 		log.Println(log.DEBUG, err)
 	}
 
-	// fmt.Println(string(responseData))
 	return string(responseData)
 }
 
@@ -345,44 +335,37 @@ func GetLicenseFromREADME(readmeText string) string {
 }
 
 /*
-RunClocOnRepo makes use of the cloc bash command readily available on eceprog. 
+RunClocOnRepo makes use of the cloc bash command readily available on eceprog.
 A repository is cloned into the directory, cloc is run on that directory, and
 the cloc output is stored inside a string variable. The repository is cleaned up
 in CheckRepoForTest, which also makes use of the cloned repository.
 */
 
 func RunClocOnRepo(repo Repo) string {
-
 	cloneString := repo.CloneURL
-	// fmt.Printf(repo.CloneURL)
 	clone := exec.Command("git", "clone", cloneString)
 	err := clone.Run()
 
 	if err != nil {
-		// fmt.Printf("failed to clone repo\n")
 		log.Println(log.DEBUG, err)
 	}
 
 	folderName := repo.Name + "/"
-	//fmt.Printf(folderName, "\n")
 	cloc := exec.Command("cloc", folderName)
 	out, err := cloc.CombinedOutput()
 
 	if err != nil {
-		// fmt.Printf("failed to run cloc command\n")
 		log.Println(log.DEBUG, err)
 	}
 
 	stringOut := string(out)
 	log.Println(log.DEBUG, stringOut)
-	// fmt.Printf("\n %s \n", stringOut)
 
 	return stringOut
-
 }
 
 /*
-CheckRepoForTest works off of the repository cloned in RunClocOnRepo. 
+CheckRepoForTest works off of the repository cloned in RunClocOnRepo.
 os.ReadDir returns a list of DirEntry objects of a folder, which lists
 a few attributes of every file/folder in the given folder name, including
 its name. We can use the names to check if a test suite/test folder exists
@@ -395,7 +378,6 @@ func CheckRepoForTest(repo Repo) float64 {
 	temp, err := os.ReadDir(repo.Name)
 
 	if err != nil {
-		// fmt.Printf("unable to read repo name\n")
 		log.Println(log.DEBUG, err)
 	}
 
@@ -413,10 +395,8 @@ func CheckRepoForTest(repo Repo) float64 {
 	err = rem.Run()
 
 	if err != nil {
-		// fmt.Printf("failed to remove repo folder\n")
 		log.Println(log.DEBUG, err)
 	}
 
 	return testFound
-
 }
