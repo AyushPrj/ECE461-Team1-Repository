@@ -70,7 +70,6 @@ func main() {
 		if gitMatch {
 			gitLinkMatch := regexp.MustCompile(".*github.com/(.*)")
 			tmpName = gitLinkMatch.FindStringSubmatch(each_ln)[1]
-			fmt.Printf("%s\n", tmpName)
 			tmpSite = api.GITHUB
 		} else {
 			npmLinkMatch := regexp.MustCompile(".*package/(.*)")
@@ -85,7 +84,7 @@ func main() {
 		links = append(links, newLink)
 	}
 
-	// Sort array of links by net score (decending)
+	// Sort array of links by net score (descending)
 	sort.Slice(links, func(i, j int) bool {
 		return links[i].netScore > links[j].netScore
 	})
