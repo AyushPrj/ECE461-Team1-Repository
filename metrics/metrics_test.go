@@ -1,95 +1,56 @@
 package metrics
 
 import (
-	"fmt"
+	"ECE461-Team1-Repository/api"
 	"testing"
 )
-
-/*func TestNetScore1(t *testing.T) {
-	url := "https://github.com/cloudinary/cloudinary_npm"
-	siteType := 1
-	name := "cloudinary/cloudinary_npm"
-
-	netscore, _ := GetMetrics(url, siteType, name)
-
-	if netscore == 0.8807582 {
-		t.Logf("Net Score Passed")
-	} else {
-		t.Errorf("Net Score Failed")
-	}
-}
-
-func TestNetScore2(t *testing.T) {
-	url := "https://www.npmjs.com/package/express"
-	siteType := 0
-	name := "express"
-
-	netscore, _ := GetMetrics(url, siteType, name)
-	if netscore == 0.72071 {
-		t.Logf("Net Score Passed")
-	} else {
-		t.Errorf("Net Score Failed")
-	}
-}*/
 
 func TestBusFactor(t *testing.T) {
 	url := "https://api.github.com/repos/cloudinary/cloudinary_npm/contributors"
 	if getBusFactor(url) != 0.8113949 {
-		t.Errorf("Bus Factor Failed")
+		t.Fatal("Bus Factor Failed")
 	}
 }
 
 func TestResponsiveness(t *testing.T) {
 	owner := "cloudinary"
 	name := "cloudinary_npm"
-	fmt.Println(getResponsivenessScore(owner, name))
 	if getResponsivenessScore(owner, name) != 0.9563492 {
-		t.Errorf("Responsiveness Failed")
+		t.Fatal("Responsiveness Failed")
 	}
 }
 
-/*
-		siteType := 1
-		name := "cloudinary/cloudinary_npm"
-		_, ndjson := GetMetrics(url, siteType, name)
-		//extract BUS_FACTOR_SCORE from ndjson
-		regMatch := regexp.MustCompile(`{"URL":".*", "NET_SCORE":(.*), "RAMP_UP_SCORE":(.*), "CORRECTNESS_SCORE":(.*), "BUS_FACTOR_SCORE":(.*), "RESPONSIVE_MAINTAINER_SCORE":(.*), "LICENSE_SCORE":(.*)}`)
-		result := regMatch.FindStringSubmatch(ndjson)
-		busFactorScore, _ := strconv.ParseFloat(result[4], 64)
-		if busFactorScore == 0.81 {
-			t.Logf("Bus Factor Score Passed")
-		} else {
-			t.Errorf("Bus Factor Score Failed")
-		}
-}
-
-func TestRampUpScaler1(t *testing.T) {
-	score := float32(0.1)
-	result := RampUpScaler(score)
-	if result == 0.1 {
-		t.Logf("Ramp Up Scaler Passed")
-	} else {
-		t.Errorf("Ramp Up Scaler Failed")
+func TestGetLicenseScore(t *testing.T) {
+	tst := api.Repo{FullName: "expressjs/express"}
+	if getLicenseScore(tst) == 0 {
+		t.Fatal("License Score Failed")
 	}
 }
 
-func TestRampUpScaler2(t *testing.T) {
-	score := float32(0.25)
-	result := RampUpScaler(score)
-	if result == 1 {
-		t.Logf("Ramp Up Scaler Passed")
-	} else {
-		t.Errorf("Ramp Up Scaler Failed")
+func TestGetRampupAndCorrectnessScore(t *testing.T) {
+	tst := api.Repo{CloneURL: "https://github.com/expressjs/express.git", Name: "express"}
+	tst_ramp := getRampUpScore(tst)
+	tst_correctness := getCorrectnessScore(tst)
+	if tst_ramp != 0.48373964 || tst_correctness != 1.0 {
+		t.Fatal("Cloning process Failed")
 	}
 }
 
-func TestRampUpScaler3(t *testing.T) {
-	score := float32(0.5)
-	result := RampUpScaler(score)
-	fmt.Println(result)
-	if result == 0.8888889 {
-		t.Logf("Ramp Up Scaler Passed")
-	} else {
-		t.Errorf("Ramp Up Scaler Failed")
+func TestScaler(t *testing.T) {
+	if RampUpScaler(0.0) != 0.0 {
+		t.Fatal("Scaling process Failed")
 	}
-}*/
+	if RampUpScaler(0.6) != 0.7822222 {
+		t.Fatal("Scaling process Failed")
+	}
+}
+
+func TestGetMetric(t *testing.T) {
+	url := "https://www.npmjs.com/package/express"
+	siteType := 0
+	name := "express"
+	netscore, _ := GetMetrics(url, siteType, name)
+	if netscore != 0.7206798 {
+		t.Fatal("GetMetric Failed")
+	}
+}
