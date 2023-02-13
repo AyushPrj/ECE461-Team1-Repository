@@ -2,8 +2,8 @@
 
 if [ $1 = "install" ]
 then
-go mod init ECE461-Team1-Repository
 go mod tidy
+go mod download
 elif [ $1 = 'build' ]
 then
 (cd main; go build main.go)
@@ -14,8 +14,7 @@ CNT1=$((cd api; go test -cover -v) | grep -c PASS)
 CNT2=$((cd log; go test -cover -v) | grep -c PASS)
 CNT3=$((cd metrics; go test -cover -v) | grep -c PASS)
 CNT=$((CNT1 + CNT2 + CNT3 + 1))
-echo $CNT
-echo "Tests Passed out of 22"
+echo "${CNT}/25 test cases passed."
 else
 (./main/main $1)
 fi

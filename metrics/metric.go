@@ -128,7 +128,7 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) + `, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `}`
 
 	log.Printf(log.DEBUG, ndjson)
-	fmt.Println(netScore)
+	// fmt.Println(netScore)
 
 	return netScore, ndjson
 }
