@@ -9,7 +9,7 @@ then
 (cd main; go build main.go)
 elif [ $1 = 'test' ]
 then
-(cd main; go test -cover)
+go test ./... -cover
 else
 (./main/main $1)
 fi
