@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var PassedTests int
+
 func getBusFactor(url string) float32 {
 	return 1 - api.GetContributionRatio(url)
 }
