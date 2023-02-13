@@ -1,14 +1,12 @@
 package log
 
 import (
-	"os"
 	"testing"
 )
 
-
 func TestShouldLog(t *testing.T) {
 	// setup
-	os.Setenv("LOG_LEVEL", "2")
+	LOG_LEVEL = "2"
 
 	// tests
 	if !shouldLog("2") {
@@ -20,4 +18,11 @@ func TestShouldLog(t *testing.T) {
 	if shouldLog("0") {
 		t.Error("expected shouldLog(\"0\") to return false")
 	}
+
+	LOG_LEVEL = "0"
+}
+
+func TestNoLog(t *testing.T) {
+	Println(NONE, "nothing should print")
+	Printf(NONE, "nothing should print")
 }
