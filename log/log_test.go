@@ -1,6 +1,8 @@
 package log
 
 import (
+	golog "log"
+	"os"
 	"testing"
 )
 
@@ -19,10 +21,18 @@ func TestShouldLog(t *testing.T) {
 		t.Error("expected shouldLog(\"0\") to return false")
 	}
 
-	LOG_LEVEL = "0"
 }
 
 func TestNoLog(t *testing.T) {
-	Println(NONE, "nothing should print")
-	Printf(NONE, "nothing should print")
+	LOG_LEVEL = "1"
+
+	f, _ := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+
+	defer f.Close()
+
+	golog.SetOutput(f)
+
+	Println(INFO, "Running Test Case (println)")
+	Printf(INFO, "Running Test Case (printf)")
+
 }
