@@ -13,7 +13,7 @@ import (
 var total int = 20
 var pass int = 0
 
-func TestMain2(t *testing.T) {
+func TestMain(t *testing.T) {
 	os.Args = []string{"main", "test.txt"}
 	main()
 }
@@ -147,7 +147,6 @@ func TestURL(t *testing.T) {
 	result := regMatch.FindStringSubmatch(test)
 	if strings.Contains(result[1], "github.com") || strings.Contains(result[1], "npmjs") {
 		t.Logf("URL Passed")
-		//fmt.Println("URL Passed")
 		pass = pass + 1
 	} else {
 		t.Errorf("URL Failed")
@@ -160,6 +159,6 @@ func TestSummary(t *testing.T) {
 	fmt.Println(pass, "/", total, "test cases passed")
 }
 
-func TestMain(m *testing.M) {
+func Cov(m *testing.M) {
 	m.Run()
 }

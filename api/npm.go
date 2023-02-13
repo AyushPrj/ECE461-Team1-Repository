@@ -52,8 +52,6 @@ func getNPMData(pkgName string) NPMData {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// fmt.Println(responseData)
 	var responseObject NPMData
 	json.Unmarshal(responseData, &responseObject)
 	return responseObject
@@ -61,7 +59,5 @@ func getNPMData(pkgName string) NPMData {
 
 func GetGithubURL(pkgName string) string {
 	data := getNPMData(pkgName)
-	// fmt.Println(data.Repository.URL)
-
 	return data.Repository.URL
 }

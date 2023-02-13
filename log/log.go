@@ -25,7 +25,7 @@ func shouldLog(mode string) bool {
 
 func Println(mode string, v ...any) {
 	if shouldLog(mode) {
-		log.Println(v)
+		log.Println(v...)
 	}
 }
 

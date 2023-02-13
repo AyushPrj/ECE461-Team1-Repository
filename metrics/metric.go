@@ -9,17 +9,19 @@ import (
 )
 
 func getBusFactor(url string) float32 {
-	// TODO: might have to scale this someway
 	return 1 - api.GetContributionRatio(url)
 }
 
 func getResponsivenessScore(owner, name string) float32 {
 	closed, total := api.GetIssuesCount(owner, name)
-	return float32(closed) / float32(total)
+	if total != 0 {
+		return float32(closed) / float32(total)
+	} else {
+		return 0
+	}
 }
 
-
-//getLicenseScore checks if the output of GetLicenseFromREADME is blank, and assigns 0 or 1 accordingly
+// getLicenseScore checks if the output of GetLicenseFromREADME is blank, and assigns 0 or 1 accordingly
 func getLicenseScore(repo api.Repo) int {
 	readme_string := api.GetRawREADME(repo)
 	license_string := api.GetLicenseFromREADME(readme_string)
@@ -27,19 +29,16 @@ func getLicenseScore(repo api.Repo) int {
 	if license_string == "" {
 		return 0
 	}
-
 	return 1
-
 }
 
 func getCorrectnessScore(repo api.Repo) float64 {
-
 	return api.CheckRepoForTest(repo)
 }
 
 /*
 getRampUpScore uses the output of RunClocOnRepo, which is the output of cloc. The function
-parses the string using a regex and pulls the last 2 numerical values from the string, the 
+parses the string using a regex and pulls the last 2 numerical values from the string, the
 number of commented lines of code and the total number of lines of code. The ratio of these
 2 values is used as the score for ramp-up time.
 */
@@ -63,8 +62,11 @@ func getRampUpScore(repo api.Repo) float32 {
 	}
 
 	var score float32
-	score = float32(commentLinesVal) / float32(codeLinesVal)
-	// fmt.Printf("score: %f\n", score)
+	if codeLinesVal != 0 {
+		score = float32(commentLinesVal) / float32(codeLinesVal)
+	} else {
+		score = 0
+	}
 	// insert scaling factor here
 	score = RampUpScaler(score)
 
@@ -86,7 +88,7 @@ func RampUpScaler(score float32) float32 {
 		var denomConst float32 = 0.5625
 		score = (score - 0.25) * (score - 0.25)
 		score *= -1
-		score = score / denomConst + 1
+		score = score/denomConst + 1
 		return score
 	}
 
@@ -101,15 +103,11 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 		gitLinkMatch := regexp.MustCompile(".*github.com/(.*).git")
 		githubURL := gitLinkMatch.FindStringSubmatch(giturl)[1]
 		repo = api.GetRepo(githubURL)
-		// fmt.Println(repo.FullName)
 	} else if siteType == api.GITHUB {
 		repo = api.GetRepo(name)
-		// fmt.Println(repo.Name)
 	}
 
-	// fmt.Println(repo.CloneURL)
 	rampUp := getRampUpScore(repo)
-	//rampUp := -1.0
 	correctness := getCorrectnessScore(repo)
 	busFactor := getBusFactor(repo.ContributorsURL)
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
