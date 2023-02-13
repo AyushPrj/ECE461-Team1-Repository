@@ -83,7 +83,7 @@ func RampUpScaler(score float32) float32 {
 	if score <= 0.1 {
 		return score
 	} else if score > 0.1 && score <= 0.25 {
-		return 4 * score
+		return 6 * score - 0.5
 	} else {
 		var denomConst float32 = 0.5625
 		score = (score - 0.25) * (score - 0.25)
