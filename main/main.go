@@ -81,9 +81,6 @@ func main() {
 		// get the metrics in ndjson format for each link and add to list
 		// fmt.Printf("%s\n", tmpName)
 		netscore, ndjson := metrics.GetMetrics(each_ln, tmpSite, tmpName)
-		//print tmpSite
-		fmt.Printf("tmpSite: %d", tmpSite)
-		fmt.Printf("tmpName: %s", tmpName)
 		newLink := Link{site: tmpSite, name: tmpName, netScore: netscore, ndjson: ndjson}
 		links = append(links, newLink)
 	}

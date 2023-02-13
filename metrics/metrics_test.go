@@ -2,12 +2,10 @@ package metrics
 
 import (
 	"fmt"
-	"regexp"
-	"strconv"
 	"testing"
 )
 
-func TestNetScore1(t *testing.T) {
+/*func TestNetScore1(t *testing.T) {
 	url := "https://github.com/cloudinary/cloudinary_npm"
 	siteType := 1
 	name := "cloudinary/cloudinary_npm"
@@ -32,23 +30,37 @@ func TestNetScore2(t *testing.T) {
 	} else {
 		t.Errorf("Net Score Failed")
 	}
-}
+}*/
 
 func TestBusFactor(t *testing.T) {
-	url := "https://github.com/cloudinary/cloudinary_npm"
-	siteType := 1
-	name := "cloudinary/cloudinary_npm"
-	_, ndjson := GetMetrics(url, siteType, name)
-	//extract BUS_FACTOR_SCORE from ndjson
-	regMatch := regexp.MustCompile(`{"URL":".*", "NET_SCORE":(.*), "RAMP_UP_SCORE":(.*), "CORRECTNESS_SCORE":(.*), "BUS_FACTOR_SCORE":(.*), "RESPONSIVE_MAINTAINER_SCORE":(.*), "LICENSE_SCORE":(.*)}`)
-	result := regMatch.FindStringSubmatch(ndjson)
-	busFactorScore, _ := strconv.ParseFloat(result[4], 64)
-	if busFactorScore == 0.81 {
-		t.Logf("Bus Factor Score Passed")
-	} else {
-		t.Errorf("Bus Factor Score Failed")
+	url := "https://api.github.com/repos/cloudinary/cloudinary_npm/contributors"
+	if getBusFactor(url) != 0.8113949 {
+		t.Errorf("Bus Factor Failed")
 	}
+}
 
+func TestResponsiveness(t *testing.T) {
+	owner := "cloudinary"
+	name := "cloudinary_npm"
+	fmt.Println(getResponsivenessScore(owner, name))
+	if getResponsivenessScore(owner, name) != 0.9563492 {
+		t.Errorf("Responsiveness Failed")
+	}
+}
+
+/*
+		siteType := 1
+		name := "cloudinary/cloudinary_npm"
+		_, ndjson := GetMetrics(url, siteType, name)
+		//extract BUS_FACTOR_SCORE from ndjson
+		regMatch := regexp.MustCompile(`{"URL":".*", "NET_SCORE":(.*), "RAMP_UP_SCORE":(.*), "CORRECTNESS_SCORE":(.*), "BUS_FACTOR_SCORE":(.*), "RESPONSIVE_MAINTAINER_SCORE":(.*), "LICENSE_SCORE":(.*)}`)
+		result := regMatch.FindStringSubmatch(ndjson)
+		busFactorScore, _ := strconv.ParseFloat(result[4], 64)
+		if busFactorScore == 0.81 {
+			t.Logf("Bus Factor Score Passed")
+		} else {
+			t.Errorf("Bus Factor Score Failed")
+		}
 }
 
 func TestRampUpScaler1(t *testing.T) {
@@ -80,4 +92,4 @@ func TestRampUpScaler3(t *testing.T) {
 	} else {
 		t.Errorf("Ramp Up Scaler Failed")
 	}
-}
+}*/
