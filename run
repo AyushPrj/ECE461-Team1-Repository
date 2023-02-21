@@ -1,8 +1,8 @@
 #!/bin/bash
 
 function help() {
+  echo '------------- ./run Commands ----------------------'
   echo 'Usage: ./run [install|build|test]'
-  echo '------------ Sample Commands ----------------------'
   echo 'install  - Installs any dependencies in userland'
   echo 'build    - Completes any compilation needed' 
   echo 'test     - Runs go.tests' 
@@ -13,11 +13,12 @@ function help() {
 function install {
     go mod tidy
     go mod download
-    if ! command -v gcloud &> /dev/null; then
-        curl https://sdk.cloud.google.com | bash
-    else
-        gcloud components update
-    fi
+    # DONOT DO THIS YET
+    # if ! command -v gcloud &> /dev/null; then
+    #     curl https://sdk.cloud.google.com | bash
+    # else
+    #     gcloud components update
+    # fi
 }
 
 function build {

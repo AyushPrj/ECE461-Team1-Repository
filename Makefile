@@ -8,7 +8,6 @@ help:
 	| sort \
 	| egrep -v -e '^[^[:alnum:]]' -e '^$@$$' \
 	| xargs -I _ sh -c 'printf "%-20s " _; make _ -nB | (grep -i "^# Help:" || echo "") | tail -1 | sed "s/^# Help: //g"'
-	@printf "%-20s %s\n" "------ ./run Commands -----------"
 	@./${EXEC} help
 
 install:
@@ -24,11 +23,11 @@ test:
 	./${EXEC} test
 
 test1:
-	@# Help: Test1
+	@# Help: github/cloudinary_npm
 	./${EXEC} https://github.com/cloudinary/cloudinary_npm
 
 test2:
-	@# Help: Test2
+	@# Help: npmjs/express
 	./${EXEC} https://www.npmjs.com/package/express
 
 git: clean
