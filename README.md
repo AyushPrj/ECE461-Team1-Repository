@@ -1,13 +1,13 @@
 # ECE461 Team 7 Repository (Fork from Team 1)
 This repository contains the source code for the ECE461 Team1 project.
 
-## Project Members
+## Project Members (Part 2)
 - Nahush Anand
 - Alonso Ernesto Cestti
 - Nandini Krishna
 - Bartosz Stoppel
 
-## Old Project Members
+## Former Project Members (Part 1)
 - Roshan Raj
 - Ayush Praharaj
 - Seungkeun Lee
