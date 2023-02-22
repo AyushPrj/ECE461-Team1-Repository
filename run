@@ -1,20 +1,57 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-if [ $1 = "install" ]
-then
-go mod tidy
-go mod download
-elif [ $1 = 'build' ]
-then
-(cd main; go build main.go)
-elif [ $1 = 'test' ]
-then
-go test ./... -cover
-CNT1=$((cd api; go test -cover -v) | grep -c PASS)
-CNT2=$((cd log; go test -cover -v) | grep -c PASS)
-CNT3=$((cd metrics; go test -cover -v) | grep -c PASS)
-CNT=$((CNT1 + CNT2 + CNT3 + 1))
-echo "${CNT}/25 test cases passed."
-else
-(./main/main $1)
-fi
+function help() {
+  echo '------------- ./run Commands ----------------------'
+  echo 'Usage: ./run [install|build|test]'
+  echo 'install  - Installs any dependencies in userland'
+  echo 'build    - Completes any compilation needed' 
+  echo 'test     - Runs go.tests' 
+  echo 'ADD MORE EXPLAINATION HERE'
+  echo '---------------------------------------------------'
+}
+
+function install {
+    go mod tidy
+    go mod download
+    # DONOT DO THIS YET
+    # if ! command -v gcloud &> /dev/null; then
+    #     curl https://sdk.cloud.google.com | bash
+    # else
+    #     gcloud components update
+    # fi
+}
+
+function build {
+    (cd main; go build main.go)
+}
+
+function test {
+    go test ./... -cover
+    CNT1=$((cd api; go test -cover -v) | grep -c PASS)
+    CNT2=$((cd log; go test -cover -v) | grep -c PASS)
+    CNT3=$((cd metrics; go test -cover -v) | grep -c PASS)
+    CNT=$((CNT1 + CNT2 + CNT3 + 1))
+    echo "${CNT}/25 test cases passed."
+}
+
+function run {
+    (./main/main $1)
+}
+
+case "$1" in
+    "install")
+        install
+        ;;
+    "build")
+        build
+        ;;
+    "test")
+        test
+        ;;
+    "help")
+        help
+        ;;
+    *)
+        run $1
+        ;;
+esac
