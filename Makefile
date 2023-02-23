@@ -18,17 +18,13 @@ build:
 	@# Help: Builds project 
 	./${EXEC} build
 
-test:
+test: build
 	@# Help: Runs tests
 	./${EXEC} test
 
-test1:
-	@# Help: github/cloudinary_npm
-	./${EXEC} https://github.com/cloudinary/cloudinary_npm
-
-test2:
-	@# Help: npmjs/express
-	./${EXEC} https://www.npmjs.com/package/express
+test1: build
+	@# Help: text.txt in main
+	./${EXEC} ./main/test.txt
 
 git: clean
 	@# Help: Automates the git push workflow
