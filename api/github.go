@@ -410,6 +410,16 @@ deleted to get the total number of reviewed lines.
 */
 
 func CountReviewedLines(repo Repo) int {
+	// TODO: NEED TO CHANGE THIS, DO NOT CLONE AGANE
+	cloneString := repo.CloneURL
+	clone := exec.Command("git", "clone", cloneString)
+	err := clone.Run()
+
+	err = os.Chdir(repo.Name)
+	if err != nil {
+		log.Println(log.DEBUG, err)
+	}
+
 	cmd := exec.Command("git", "log", "--merges", "--pretty=format:'%h %s'")
 	out, err := cmd.Output()
 
@@ -423,6 +433,7 @@ func CountReviewedLines(repo Repo) int {
 	for _, commit := range commits {
 		parts := strings.Split(commit, " ")
 		hash := parts[0][1 : len(parts[0])-1]
+		log.Println(log.DEBUG, commit)
 
 		if "Merge" == parts[1] {
             cmd := exec.Command("git", "diff", hash+"^", hash, "--numstat")
