@@ -6,7 +6,7 @@ function help() {
   echo 'install  - Installs any dependencies in userland'
   echo 'build    - Completes any compilation needed' 
   echo 'test     - Runs go.tests' 
-  echo 'ADD MORE EXPLAINATION HERE'
+  echo 'ADD MORE EXPLANATION HERE'
   echo '---------------------------------------------------'
 }
 
@@ -22,7 +22,7 @@ function install {
 }
 
 function build {
-    (cd main; go build main.go)
+    (cd main; go build -o main main.go)
 }
 
 function test {
@@ -39,6 +39,9 @@ function run {
 }
 
 case "$1" in
+    # "export")
+    #     $(export $(cat .env | xargs))
+    #     ;;
     "install")
         install
         ;;
