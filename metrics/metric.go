@@ -42,12 +42,17 @@ parses the string using a regex and pulls the last 2 numerical values from the s
 number of commented lines of code and the total number of lines of code. The ratio of these
 2 values is used as the score for ramp-up time.
 */
-func getRampUpScore(repo api.Repo) float32 {
+func getRampUpScore(repo api.Repo) (float32, int) {
 
 	clocString := api.RunClocOnRepo(repo)
-	regMatch := regexp.MustCompile(`.*SUM:\s*\d*\s*\d*\s*(\d*)\s*(\d*)`)
-	commentLines := regMatch.FindStringSubmatch(clocString)[1]
-	codeLines := regMatch.FindStringSubmatch(clocString)[2]
+	regMatch := regexp.MustCompile(`.*SUM:\s*\d*\s*\d*\s*(\d*)\s*(\d*)`).FindStringSubmatch(clocString)
+	if len(regMatch) < 3 {
+		log.Println(log.DEBUG, "Regex could find no match")
+		return 0,0
+	}
+
+	commentLines := regMatch[1]
+	codeLines := regMatch[2]
 
 	commentLinesVal, err := strconv.Atoi(commentLines)
 
@@ -70,7 +75,7 @@ func getRampUpScore(repo api.Repo) float32 {
 	// insert scaling factor here
 	score = RampUpScaler(score)
 
-	return score
+	return score, codeLinesVal
 }
 
 /*
@@ -94,6 +99,18 @@ func RampUpScaler(score float32) float32 {
 
 }
 
+/*
+getReviewCoverage returns lines added from pull requests divided by total lines. Output lies in [0.0, 1.0]
+*/
+
+func getReviewCoverage(repo api.Repo, numLines int) float32 {
+	return float32(api.CountReviewedLines(repo)) / float32(numLines)
+}
+
+/*
+GetMetrics calculates rating for the input repo
+*/
+
 func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	var repo api.Repo
 
@@ -107,13 +124,18 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 		repo = api.GetRepo(name)
 	}
 
-	rampUp := getRampUpScore(repo)
+	rampUp, numLines := getRampUpScore(repo)
 	correctness := getCorrectnessScore(repo)
 	busFactor := getBusFactor(repo.ContributorsURL)
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
 	license := getLicenseScore(repo)
-	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
-	// multiply by license score
+	depPinRate := float32(1.0) // TODO: DEP PIN RATE
+	reviewCoverage := getReviewCoverage(repo, numLines)
+
+	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license
+	//netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
+	// NEW FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .2 * responsiveness + .1 * depPinRate + .2 * reviewCoverage) * license
+	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + .1 * depPinRate + 0.2*reviewCoverage) * float32(license)
 
 	// Log (info)
 	log.Printf(log.INFO, "Name: %v", name)
@@ -123,9 +145,11 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	log.Printf(log.INFO, "Correctness: %v", correctness)
 	log.Printf(log.INFO, "Responsiveness: %#v", responsiveness)
 	log.Printf(log.INFO, "License: %v", license)
+	log.Printf(log.INFO, "Code Review Coverage: %v", reviewCoverage)
 
 	ndjson := `{"URL":"` + baseURL + `", "NET_SCORE":` + fmt.Sprintf("%.2f", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%.2f", rampUp) +
-		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) + `, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `}`
+		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) + 
+		`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
 
 	log.Printf(log.DEBUG, ndjson)
 	// fmt.Println(netScore)

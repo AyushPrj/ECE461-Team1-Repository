@@ -27,11 +27,12 @@ func TestGetLicenseScore(t *testing.T) {
 	}
 }
 
-func TestGetRampupAndCorrectnessScore(t *testing.T) {
+func TestGetRampupAndCorrectnessScoreAndReviewCoverage(t *testing.T) {
 	tst := api.Repo{CloneURL: "https://github.com/expressjs/express.git", Name: "express"}
-	tst_ramp := getRampUpScore(tst)
+	tst_ramp, numLines := getRampUpScore(tst)
 	tst_correctness := getCorrectnessScore(tst)
-	if tst_ramp >= 1 || tst_correctness != 1.0 {
+	tst_coverage := getReviewCoverage(tst, numLines)
+	if tst_ramp >= 1 || tst_correctness != 1.0 || tst_coverage > 1{
 		t.Fatal("Cloning process Failed")
 	}
 }
