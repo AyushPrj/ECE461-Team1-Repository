@@ -46,5 +46,8 @@ pull:
 # EXAMPLE @rm -rf ________ || true
 clean:
 	@# Help: Removes unnecessary files 
+	rm -f *.log *.exe
+	cd log; rm -f *.log 
+	cd main; rm -f *.log *.exe
 
 .PHONY: help install build test git pull clean
