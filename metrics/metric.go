@@ -129,7 +129,7 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	busFactor := getBusFactor(repo.ContributorsURL)
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
 	license := getLicenseScore(repo)
-	depPinRate := float32(1.0)
+	depPinRate := float32(1.0) // TODO DEP PIN RATE
 	reviewCoverage := getReviewCoverage(repo, numLines)
 
 	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license
@@ -148,7 +148,8 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	log.Printf(log.INFO, "Code Review Coverage: %v", reviewCoverage)
 
 	ndjson := `{"URL":"` + baseURL + `", "NET_SCORE":` + fmt.Sprintf("%.2f", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%.2f", rampUp) +
-		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) + `, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `}`
+		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) + 
+		`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
 
 	log.Printf(log.DEBUG, ndjson)
 	// fmt.Println(netScore)

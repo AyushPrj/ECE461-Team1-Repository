@@ -392,13 +392,6 @@ func CheckRepoForTest(repo Repo) float64 {
 		}
 	}
 
-	rem := exec.Command("rm", "-r", repo.Name)
-	err = rem.Run()
-
-	if err != nil {
-		log.Println(log.DEBUG, err)
-	}
-
 	return testFound
 }
 
@@ -411,11 +404,8 @@ deleted to get the total number of reviewed lines.
 
 func CountReviewedLines(repo Repo) int {
 	// TODO: NEED TO CHANGE THIS, DO NOT CLONE AGANE
-	cloneString := repo.CloneURL
-	clone := exec.Command("git", "clone", cloneString)
-	err := clone.Run()
 
-	err = os.Chdir(repo.Name)
+	err := os.Chdir(repo.Name)
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
@@ -464,6 +454,13 @@ func CountReviewedLines(repo Repo) int {
 
 		}
 		// ELSE NOTHING - COMMIT IS NOT A PULL REQUEST
+	}
+
+	rem := exec.Command("rm", "-r", repo.Name)
+	err = rem.Run()
+
+	if err != nil {
+		log.Println(log.DEBUG, err)
 	}
 
 	return totLinesReviewed 
