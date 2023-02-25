@@ -344,9 +344,21 @@ in CheckRepoForTest, which also makes use of the cloned repository.
 
 func RunClocOnRepo(repo Repo) string {
 	cloneString := repo.CloneURL
-	clone := exec.Command("git", "clone", cloneString)
-	err := clone.Run()
 
+	// Get current working directory 
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
+
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println("Error navigating to main folder:", err)
+	}
+
+	// Clone repo
+	clone := exec.Command("git", "clone", cloneString)
+	err = clone.Run()
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
@@ -360,6 +372,7 @@ func RunClocOnRepo(repo Repo) string {
 	}
 
 	stringOut := string(out)
+	os.Chdir(dir)
 	log.Println(log.DEBUG, stringOut)
 
 	return stringOut
@@ -403,16 +416,25 @@ deleted to get the total number of reviewed lines.
 */
 
 func CountReviewedLines(repo Repo) int {
-	// TODO: NEED TO CHANGE THIS, DO NOT CLONE AGANE
+	// Get current working directory 
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
 
-	err := os.Chdir(repo.Name)
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println("Error navigating to main folder:", err)
+	}
+
+	// Go to repo folder
+	err = os.Chdir(repo.Name)
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
 
 	cmd := exec.Command("git", "log", "--merges", "--pretty=format:'%h %s'")
 	out, err := cmd.Output()
-
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
@@ -455,6 +477,7 @@ func CountReviewedLines(repo Repo) int {
 		// ELSE NOTHING - COMMIT IS NOT A PULL REQUEST
 	}
 	
+	os.Chdir(dir)
 	rem := exec.Command("rm", "-r", repo.Name)
 	err = rem.Run()
 

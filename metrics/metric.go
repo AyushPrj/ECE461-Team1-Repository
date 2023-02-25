@@ -4,8 +4,6 @@ import (
 	"ECE461-Team1-Repository/api"
 	"ECE461-Team1-Repository/log"
 	"fmt"
-	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 )
@@ -106,9 +104,6 @@ getReviewCoverage returns lines added from pull requests divided by total lines.
 */
 
 func getReviewCoverage(repo api.Repo, numLines int) float32 {
-	fmt.Println("REVIEWED LINES:", api.CountReviewedLines(repo))
-	fmt.Println("TOTAL LINES:", numLines)
-	fmt.Println("RATIO:", float32(api.CountReviewedLines(repo)) / float32(numLines))
 	return float32(api.CountReviewedLines(repo)) / float32(numLines)
 }
 
@@ -158,18 +153,6 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 
 	log.Printf(log.DEBUG, ndjson)
 	// fmt.Println(netScore)
-
-	// Fail safe if repo was not removed
-	fmt.Println("REPO NAME:", repo.Name)
-	if _, err := os.Stat(repo.Name); err == nil {
-		rem := exec.Command("rm", "-r", repo.Name)
-		err = rem.Run()
-		if err != nil {
-			log.Println(log.DEBUG, "Repo couldn't be removed:", repo.Name)
-		} else {
-			log.Println(log.DEBUG, "Did not remove repo correctly:", repo.Name)
-		}
-	}
 
 	return netScore, ndjson
 }
