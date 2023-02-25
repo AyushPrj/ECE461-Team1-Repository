@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"strconv"
 	"time"
 )
 
@@ -343,9 +344,21 @@ in CheckRepoForTest, which also makes use of the cloned repository.
 
 func RunClocOnRepo(repo Repo) string {
 	cloneString := repo.CloneURL
-	clone := exec.Command("git", "clone", cloneString)
-	err := clone.Run()
 
+	// Get current working directory 
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
+
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println("Error navigating to main folder:", err)
+	}
+
+	// Clone repo
+	clone := exec.Command("git", "clone", cloneString)
+	err = clone.Run()
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
@@ -359,6 +372,7 @@ func RunClocOnRepo(repo Repo) string {
 	}
 
 	stringOut := string(out)
+	os.Chdir(dir)
 	log.Println(log.DEBUG, stringOut)
 
 	return stringOut
@@ -372,8 +386,8 @@ its name. We can use the names to check if a test suite/test folder exists
 in the repository, assigning a score of 1 or 0 based on if it does or does
 not exist. The cloned repository is also cleaned up in this function.
 */
-func CheckRepoForTest(repo Repo) float64 {
 
+func CheckRepoForTest(repo Repo) float64 {
 	testFound := 0.0
 	temp, err := os.ReadDir(repo.Name)
 
@@ -391,12 +405,86 @@ func CheckRepoForTest(repo Repo) float64 {
 		}
 	}
 
+	return testFound
+}
+
+/*
+CountReviewedLines counts the amount of lines that were merged into the repo's main via
+pull request. For each identified pull request, it uses git diff to get the number of lines 
+added and deleted in the pull request. The function then adds up the lines added and 
+deleted to get the total number of reviewed lines.
+*/
+
+func CountReviewedLines(repo Repo) int {
+	// Get current working directory 
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
+
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println("Error navigating to main folder:", err)
+	}
+
+	// Go to repo folder
+	err = os.Chdir(repo.Name)
+	if err != nil {
+		log.Println(log.DEBUG, err)
+	}
+
+	cmd := exec.Command("git", "log", "--merges", "--pretty=format:'%h %s'")
+	out, err := cmd.Output()
+	if err != nil {
+		log.Println(log.DEBUG, err)
+	}
+
+	var totLinesReviewed int = 0
+	commits := strings.Split(string(out), "\n")
+
+	for _, commit := range commits {
+		parts := strings.Split(commit, " ")
+		hash := parts[0][1 : len(parts[0])-1]
+
+		if "Merge" == parts[1] {
+            cmd := exec.Command("git", "diff", hash+"^", hash, "--numstat")
+			out, err := cmd.Output()
+
+            if err != nil {
+				log.Println(log.DEBUG, err)
+            }
+
+			for _, line := range strings.Split(string(out), "\n") {
+				parts := strings.Fields(line)
+
+				// 3 fields :: lines added, lines deleted, filename
+				if len(parts) == 3 && parts[0] != "-" && parts[1] != "-" {
+					added, err := strconv.Atoi(parts[0])
+					if err != nil {
+						log.Println(log.DEBUG, err)
+					}
+
+					deleted, err := strconv.Atoi(parts[1])
+					if err != nil {
+						log.Println(log.DEBUG, err)
+					}
+
+					totLinesReviewed += added - deleted
+				}
+			}
+
+		}
+		// ELSE NOTHING - COMMIT IS NOT A PULL REQUEST
+	}
+	
+	os.Chdir(dir)
 	rem := exec.Command("rm", "-r", repo.Name)
 	err = rem.Run()
 
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
+	os.RemoveAll(repo.Name)
 
-	return testFound
+	return totLinesReviewed 
 }

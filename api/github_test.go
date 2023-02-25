@@ -87,10 +87,14 @@ func TestGetLicense(t *testing.T) {
 func TestCloning(t *testing.T) {
 	tst := Repo{CloneURL: "https://github.com/expressjs/express.git", Name: "express"}
 	if RunClocOnRepo(tst)[0] != ' ' {
-		t.Fatal("Error cloning repository!")
+		t.Fatal("Cloc: Error cloning repository!")
 	}
 
 	if CheckRepoForTest(tst) != 1.0 {
-		t.Fatal("Error cloning repository!")
+		t.Fatal("Checking: Error cloning repository!")
+	}
+
+	if CountReviewedLines(tst) < 0 {
+		t.Fatal("Counting: Error cloning repository!")
 	}
 }
