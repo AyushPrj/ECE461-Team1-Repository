@@ -423,7 +423,6 @@ func CountReviewedLines(repo Repo) int {
 	for _, commit := range commits {
 		parts := strings.Split(commit, " ")
 		hash := parts[0][1 : len(parts[0])-1]
-		log.Println(log.DEBUG, commit)
 
 		if "Merge" == parts[1] {
             cmd := exec.Command("git", "diff", hash+"^", hash, "--numstat")
@@ -448,20 +447,21 @@ func CountReviewedLines(repo Repo) int {
 						log.Println(log.DEBUG, err)
 					}
 
-					totLinesReviewed += added + deleted
+					totLinesReviewed += added - deleted
 				}
 			}
 
 		}
 		// ELSE NOTHING - COMMIT IS NOT A PULL REQUEST
 	}
-
+	
 	rem := exec.Command("rm", "-r", repo.Name)
 	err = rem.Run()
 
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
+	os.RemoveAll(repo.Name)
 
 	return totLinesReviewed 
 }

@@ -26,6 +26,10 @@ test1: build
 	@# Help: text.txt in main
 	./${EXEC} ./main/test.txt
 
+status:
+	@# Help: Runs git status
+	@ git status
+
 git: clean
 	@# Help: Automates the git push workflow
 	$(eval MESSAGE := $(shell bash -c 'read -p "commit -m " message; echo $$message'))
