@@ -11,6 +11,12 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	//rest api
+	"encoding/json"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Link struct {
@@ -30,7 +36,7 @@ func init() {
 	LOG_FILE = log.LOG_FILE
 }
 
-func main() {
+func cli() []Link {
 	// Initialize the log file
 	f, err := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil && LOG_LEVEL != "0" {
@@ -103,11 +109,32 @@ func main() {
 	// metrics.GetMetrics("nullivex/nodist", GITHUB_TOKEN)
 
 	// Display the metrics in the stored ndjson format
-	printOutput(links)
+	// printOutput(links)
+	return links
 }
 
 func printOutput(links []Link) {
 	for _, link := range links {
 		fmt.Println(link.ndjson)
 	}
+}
+
+var links []Link
+var reposJson map[string]interface{}
+
+func jsonOutput(c *gin.Context) {
+	for _, link := range links {
+		json.Unmarshal([]byte(link.ndjson), &reposJson)
+		c.IndentedJSON(http.StatusOK, reposJson)
+		fmt.Println(link.ndjson)
+	}
+}
+
+func main() {
+	links = cli()
+
+	router := gin.Default()
+	router.GET("/repos", jsonOutput)
+	router.Run("localhost:8080")
+
 }
