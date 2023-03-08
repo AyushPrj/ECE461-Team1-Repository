@@ -11,6 +11,12 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	//rest api
+	"encoding/json"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Link struct {
@@ -30,7 +36,7 @@ func init() {
 	LOG_FILE = log.LOG_FILE
 }
 
-func main() {
+func cli() []Link {
 	// Initialize the log file
 	f, err := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil && LOG_LEVEL != "0" {
@@ -103,11 +109,71 @@ func main() {
 	// metrics.GetMetrics("nullivex/nodist", GITHUB_TOKEN)
 
 	// Display the metrics in the stored ndjson format
-	printOutput(links)
+	// printOutput(links)
+	return links
 }
 
 func printOutput(links []Link) {
+	//for _, link := range links {
+	fmt.Println(links)
+	//
+}
+
+var links []Link
+var reposJson map[string]interface{}
+var allrepos []map[string]interface{}
+
+
+func jsonOutput(c *gin.Context) {
+	// prejson += "["
+	// for i, _ := range links {
+	// 	if i < len(links) - 1{
+	// 		prejson += links[i].ndjson + ","
+	// 	}else{
+	// 		prejson+= links[i].ndjson
+	// 	}
+	// }
+	// prejson += "]"
+
+	// var repoALL ReposJson
+	// err := json.Unmarshal([]byte(prejson), &repoALL)
+    // if err != nil {
+    //     fmt.Println("Error:", err)
+    //     return
+    // }
+	
+	// c.IndentedJSON(http.StatusOK, repoALL)
 	for _, link := range links {
-		fmt.Println(link.ndjson)
+		json.Unmarshal([]byte(link.ndjson), &reposJson)
+		fmt.Println(reposJson)
+		allrepos = append(allrepos, reposJson)
 	}
+	c.IndentedJSON(http.StatusOK, allrepos)
+
+}
+
+func main() {
+	links = cli()
+
+	router := gin.Default()
+	router.Static("/assets", "./assets")
+	//router.LoadHTMLFiles("views/index.html")
+	router.LoadHTMLGlob("views/*")
+	//router.LoadHTMLFiles("views/like_button.js")
+
+	router.GET("/repos", jsonOutput)
+
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"title": "hello world",
+		})
+	})
+
+	router.GET("/loggedin.html", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "loggedin.html", gin.H{
+			"title": "hello world",
+		})
+	})
+
+	router.Run("localhost:8080")
 }
