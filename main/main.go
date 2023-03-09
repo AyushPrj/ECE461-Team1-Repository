@@ -122,41 +122,18 @@ func printOutput(links []Link) {
 
 var links []Link
 type reposJson map[string]interface{}
-
-var allrepos []map[string]interface{}
+type arr_repos []map[string]interface{}
 
 func jsonOutput(c *gin.Context) {
-	fmt.Println("INSIDE API BUILDER::")
-	// prejson += "["
-	// for i, _ := range links {
-	// 	if i < len(links) - 1{
-	// 		prejson += links[i].ndjson + ","
-	// 	}else{
-	// 		prejson+= links[i].ndjson
-	// 	}
-	// }
-	// prejson += "]"
+	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list 
 
-	// var repoALL ReposJson
-	// err := json.Unmarshal([]byte(prejson), &repoALL)
-	// if err != nil {
-	//     fmt.Println("Error:", err)
-	//     return
-	// }
-
-	// c.IndentedJSON(http.StatusOK, repoALL)
-	//allrepos := make([]map[string]interface{}, len(links))
-	fmt.Println(len(allrepos))
-
-	for i, link := range links {
+	for _, link := range links {
 		newjson := make(reposJson)
 		json.Unmarshal([]byte(link.ndjson), &newjson)
 		allrepos = append(allrepos, newjson)		
-		fmt.Println(allrepos, i)
 	}
 
 	c.IndentedJSON(http.StatusOK, allrepos)
-
 }
 
 func main() {
