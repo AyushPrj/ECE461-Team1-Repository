@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -120,11 +121,12 @@ func printOutput(links []Link) {
 }
 
 var links []Link
-var reposJson map[string]interface{}
+type reposJson map[string]interface{}
+
 var allrepos []map[string]interface{}
 
-
 func jsonOutput(c *gin.Context) {
+	fmt.Println("INSIDE API BUILDER::")
 	// prejson += "["
 	// for i, _ := range links {
 	// 	if i < len(links) - 1{
@@ -137,17 +139,22 @@ func jsonOutput(c *gin.Context) {
 
 	// var repoALL ReposJson
 	// err := json.Unmarshal([]byte(prejson), &repoALL)
-    // if err != nil {
-    //     fmt.Println("Error:", err)
-    //     return
-    // }
-	
+	// if err != nil {
+	//     fmt.Println("Error:", err)
+	//     return
+	// }
+
 	// c.IndentedJSON(http.StatusOK, repoALL)
-	for _, link := range links {
-		json.Unmarshal([]byte(link.ndjson), &reposJson)
-		fmt.Println(reposJson)
-		allrepos = append(allrepos, reposJson)
+	//allrepos := make([]map[string]interface{}, len(links))
+	fmt.Println(len(allrepos))
+
+	for i, link := range links {
+		newjson := make(reposJson)
+		json.Unmarshal([]byte(link.ndjson), &newjson)
+		allrepos = append(allrepos, newjson)		
+		fmt.Println(allrepos, i)
 	}
+
 	c.IndentedJSON(http.StatusOK, allrepos)
 
 }
@@ -156,6 +163,12 @@ func main() {
 	links = cli()
 
 	router := gin.Default()
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"POST", "PUT", "PATCH", "DELETE"},
+		AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
+	}))
+
 	router.Static("/assets", "./assets")
 	//router.LoadHTMLFiles("views/index.html")
 	router.LoadHTMLGlob("views/*")
@@ -175,5 +188,5 @@ func main() {
 		})
 	})
 
-	router.Run("localhost:8080")
+	router.Run("localhost:5500")
 }
