@@ -13,8 +13,11 @@ import (
 	"strings"
 
 	//rest api
-	"encoding/json"
+	// "encoding/json"
 	"net/http"
+
+	"ECE461-Team1-Repository/configs"
+	"ECE461-Team1-Repository/routes"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -120,24 +123,24 @@ func printOutput(links []Link) {
 	//
 }
 
-var links []Link
-type reposJson map[string]interface{}
-type arr_repos []map[string]interface{}
+// var links []Link
+// type reposJson map[string]interface{}
+// type arr_repos []map[string]interface{}
 
-func jsonOutput(c *gin.Context) {
-	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list 
+// func jsonOutput(c *gin.Context) {
+// 	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list 
 
-	for _, link := range links {
-		newjson := make(reposJson)
-		json.Unmarshal([]byte(link.ndjson), &newjson)
-		allrepos = append(allrepos, newjson)		
-	}
+// 	for _, link := range links {
+// 		newjson := make(reposJson)
+// 		json.Unmarshal([]byte(link.ndjson), &newjson)
+// 		allrepos = append(allrepos, newjson)		
+// 	}
 
-	c.IndentedJSON(http.StatusOK, allrepos)
-}
+// 	c.IndentedJSON(http.StatusOK, allrepos)
+// }
 
 func main() {
-	links = cli()
+	//links = cli()
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
@@ -146,12 +149,19 @@ func main() {
 		AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
 	}))
 
+	//run database
+    configs.ConnectDB()
+	//routes
+    routes.RepoRoute(router) //add this
+
+	
+
 	router.Static("/assets", "./assets")
 	//router.LoadHTMLFiles("views/index.html")
 	router.LoadHTMLGlob("views/*")
 	//router.LoadHTMLFiles("views/like_button.js")
 
-	router.GET("/repos", jsonOutput)
+	// router.GET("/repos", jsonOutput)
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
@@ -159,11 +169,11 @@ func main() {
 		})
 	})
 
-	router.GET("/loggedin.html", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "loggedin.html", gin.H{
-			"title": "hello world",
-		})
-	})
+	// router.GET("/loggedin.html", func(c *gin.Context) {
+	// 	c.HTML(http.StatusOK, "loggedin.html", gin.H{
+	// 		"title": "hello world",
+	// 	})
+	// })
 
 	router.Run("localhost:5500")
 }
