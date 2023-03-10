@@ -4,6 +4,7 @@ import (
 	"ECE461-Team1-Repository/log"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -156,6 +157,7 @@ func getGraphQLData(query string) []byte {
 
 	req, _ := http.NewRequest(http.MethodPost, "https://api.github.com/graphql", bytes.NewBuffer(body))
 	req.Header.Set("Authorization", "Bearer "+GITHUB_TOKEN)
+	req.Header.Set("Accept", "application/vnd.github.hawkgirl-preview+json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -242,7 +244,6 @@ func GetContributionRatio(url string) float32 {
 // Takes in owner, name and TOKEN and outputs the (closed issues, total issues)
 func GetIssuesCount(owner, name string) (int, int) {
 	query := "{\"query\" : \"query{repository(owner: \\\"" + owner + "\\\", name: \\\"" + name + "\\\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}\"}"
-
 	respData := (getGraphQLData(query))
 
 	type Issue struct {
@@ -345,7 +346,7 @@ in CheckRepoForTest, which also makes use of the cloned repository.
 func RunClocOnRepo(repo Repo) string {
 	cloneString := repo.CloneURL
 
-	// Get current working directory 
+	// Get current working directory
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Println(log.DEBUG, "Error:", err)
@@ -409,14 +410,72 @@ func CheckRepoForTest(repo Repo) float64 {
 }
 
 /*
+GetDepPinRate queries a GraphQL API to retrieve information about a repository's dependencies.
+It then calculates the percentage of pinned dependencies (dependencies with version numbers explicitly specified)
+out of the total number of dependencies for the repository.
+*/
+
+func GetDepPinRate(owner, name string) float32 {
+	query := "{\"query\":\"{repository(owner:\\\"" + owner + "\\\", name:\\\"" + name + "\\\") { dependencyGraphManifests { totalCount, edges{ node { dependencies { totalCount , nodes { packageName, requirements, hasDependencies}}}}}}}\"}"
+	respData := (getGraphQLData(query))
+
+	type DependencyGraph struct {
+		Data struct {
+			Repository struct {
+				DependencyGraphManifests struct {
+					TotalCount int `json:"totalCount"`
+					Edges []struct {
+						Node struct {
+							Dependencies struct {
+								TotalCount int `json:"totalCount"`
+								Nodes []struct {
+									PackageName      string `json:"packageName"`
+									Requirements     string `json:"requirements"`
+									HasDependencies  bool   `json:"hasDependencies"`
+								} `json:"nodes"`
+							} `json:"dependencies"`
+						} `json:"node"`
+					} `json:"edges"`
+				} `json:"dependencyGraphManifests"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+
+	var respObj DependencyGraph
+	if err := json.Unmarshal(respData, &respObj); err != nil {
+		log.Println(log.DEBUG, err)
+		return 0
+	}
+
+	dgm := respObj.Data.Repository.DependencyGraphManifests
+	if dgm.TotalCount == 0 {
+		return 0
+	}
+
+	pinnedReq := 0
+	totDep := 0
+	for _, edge := range dgm.Edges {
+		for _, dep := range edge.Node.Dependencies.Nodes {
+			totDep++;
+			if len(dep.Requirements) != 0 {
+				fmt.Println(dep.Requirements)
+				pinnedReq += 1
+			}
+		}
+	}
+
+	return float32(pinnedReq) / float32(totDep)
+}
+
+/*
 CountReviewedLines counts the amount of lines that were merged into the repo's main via
-pull request. For each identified pull request, it uses git diff to get the number of lines 
-added and deleted in the pull request. The function then adds up the lines added and 
+pull request. For each identified pull request, it uses git diff to get the number of lines
+added and deleted in the pull request. The function then adds up the lines added and
 deleted to get the total number of reviewed lines.
 */
 
 func CountReviewedLines(repo Repo) int {
-	// Get current working directory 
+	// Get current working directory
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Println(log.DEBUG, "Error:", err)
@@ -476,7 +535,7 @@ func CountReviewedLines(repo Repo) int {
 		}
 		// ELSE NOTHING - COMMIT IS NOT A PULL REQUEST
 	}
-	
+
 	os.Chdir(dir)
 	rem := exec.Command("rm", "-r", repo.Name)
 	err = rem.Run()
@@ -486,5 +545,5 @@ func CountReviewedLines(repo Repo) int {
 	}
 	os.RemoveAll(repo.Name)
 
-	return totLinesReviewed 
+	return totLinesReviewed
 }

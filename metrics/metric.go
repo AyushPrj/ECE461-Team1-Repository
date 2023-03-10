@@ -100,6 +100,14 @@ func RampUpScaler(score float32) float32 {
 }
 
 /*
+getDepPinRate returns a ratio of pinned dependencies to total dependencies
+*/
+
+func getDepPinRate(repo api.Repo) float32 {
+	return float32(api.GetDepPinRate(repo.Owner.Login, repo.Name))
+}
+
+/*
 getReviewCoverage returns lines added from pull requests divided by total lines. Output lies in [0.0, 1.0]
 */
 
@@ -129,13 +137,13 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	busFactor := getBusFactor(repo.ContributorsURL)
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
 	license := getLicenseScore(repo)
-	depPinRate := float32(1.0) // TODO: DEP PIN RATE
+	depPinRate := getDepPinRate(repo)
 	reviewCoverage := getReviewCoverage(repo, numLines)
 
 	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license
 	//netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
 	// NEW FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .2 * responsiveness + .1 * depPinRate + .2 * reviewCoverage) * license
-	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + .1 * depPinRate + 0.2*reviewCoverage) * float32(license)
+	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + .1*depPinRate + 0.2*reviewCoverage) * float32(license)
 
 	// Log (info)
 	log.Printf(log.INFO, "Name: %v", name)
@@ -145,11 +153,12 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	log.Printf(log.INFO, "Correctness: %v", correctness)
 	log.Printf(log.INFO, "Responsiveness: %#v", responsiveness)
 	log.Printf(log.INFO, "License: %v", license)
+	log.Printf(log.INFO, "Dependency Pinning Rate: %v", depPinRate)
 	log.Printf(log.INFO, "Code Review Coverage: %v", reviewCoverage)
 
 	ndjson := `{"URL":"` + baseURL + `", "NET_SCORE":` + fmt.Sprintf("%.2f", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%.2f", rampUp) +
-		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) + 
-		`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
+		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) +
+		`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "DEPENDENCY_PINNING_RATE":` + fmt.Sprintf("%.2f", depPinRate) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
 
 	log.Printf(log.DEBUG, ndjson)
 	// fmt.Println(netScore)
