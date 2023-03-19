@@ -103,8 +103,8 @@ func RampUpScaler(score float32) float32 {
 getDepPinRate returns a ratio of pinned dependencies to total dependencies
 */
 
-func getDepPinRate(repo api.Repo) float32 {
-	return float32(api.GetDepPinRate(repo.Owner.Login, repo.Name))
+func getDepPinRate(owner, name string) float32 {
+	return float32(api.GetDepPinRate(owner, name))
 }
 
 /*
@@ -137,7 +137,7 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	busFactor := getBusFactor(repo.ContributorsURL)
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
 	license := getLicenseScore(repo)
-	depPinRate := getDepPinRate(repo)
+	depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
 	reviewCoverage := getReviewCoverage(repo, numLines)
 
 	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license

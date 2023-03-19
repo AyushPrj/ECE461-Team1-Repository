@@ -4,11 +4,11 @@ import (
 	"ECE461-Team1-Repository/log"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"strconv"
 	"time"
@@ -390,6 +390,19 @@ not exist. The cloned repository is also cleaned up in this function.
 
 func CheckRepoForTest(repo Repo) float64 {
 	testFound := 0.0
+
+	// Get current working directory
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
+
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println("Error navigating to main folder:", err)
+	}
+
+	// Go to repo folder
 	temp, err := os.ReadDir(repo.Name)
 
 	if err != nil {
@@ -399,6 +412,7 @@ func CheckRepoForTest(repo Repo) float64 {
 	for _, val := range temp {
 
 		currentFile := val.Name()
+		// ADD A TEST HERE
 
 		if currentFile == "test" {
 			testFound = 1.0
@@ -449,16 +463,16 @@ func GetDepPinRate(owner, name string) float32 {
 
 	dgm := respObj.Data.Repository.DependencyGraphManifests
 	if dgm.TotalCount == 0 {
-		return 0
+		return 1
 	}
 
 	pinnedReq := 0
 	totDep := 0
+	versionRegex := regexp.MustCompile(`\d+\.\d+`)
 	for _, edge := range dgm.Edges {
 		for _, dep := range edge.Node.Dependencies.Nodes {
 			totDep++;
-			if len(dep.Requirements) != 0 {
-				fmt.Println(dep.Requirements)
+			if versionRegex.MatchString(dep.Requirements) {
 				pinnedReq += 1
 			}
 		}
