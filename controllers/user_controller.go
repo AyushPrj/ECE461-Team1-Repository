@@ -39,7 +39,7 @@ func CreateRepo() gin.HandlerFunc {
         }
 
         newRepo := models.Repo{
-            Id:       primitive.NewObjectID(),
+            //Id:       primitive.NewObjectID(),
             Name:     repo.Name,
             RampUp:   repo.RampUp,
             Correctness: repo.Correctness,
@@ -70,7 +70,7 @@ func GetARepo() gin.HandlerFunc {
 
         objId, _ := primitive.ObjectIDFromHex(repoId)
 
-        err := repoCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&repo)
+        err := repoCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&repo)
         if err != nil {
             c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
             return
@@ -103,7 +103,7 @@ func EditARepo() gin.HandlerFunc {
 
         update := bson.M{"name": repo.Name, "rampup": repo.RampUp, "correctness": repo.Correctness, "responsivemaintainer": repo.ResponsiveMaintainer, "busfactor": repo.BusFactor, "reviewcoverage": repo.ReviewCoverage, 
                          "dependancypinning": repo.DependancyPinning, "license": repo.License, "net": repo.Net}
-        result, err := repoCollection.UpdateOne(ctx, bson.M{"id": objId}, bson.M{"$set": update})
+        result, err := repoCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
 
         if err != nil {
             c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -113,7 +113,7 @@ func EditARepo() gin.HandlerFunc {
         //get updated repo details
         var updatedRepo models.Repo
         if result.MatchedCount == 1 {
-            err := repoCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&updatedRepo)
+            err := repoCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedRepo)
             if err != nil {
                 c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
                 return
@@ -132,7 +132,7 @@ func DeleteARepo() gin.HandlerFunc {
 
         objId, _ := primitive.ObjectIDFromHex(repoId)
 
-        result, err := repoCollection.DeleteOne(ctx, bson.M{"id": objId})
+        result, err := repoCollection.DeleteOne(ctx, bson.M{"_id": objId})
 
         if err != nil {
             c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})

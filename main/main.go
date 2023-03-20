@@ -14,7 +14,7 @@ import (
 
 	//rest api
 	// "encoding/json"
-	"net/http"
+	// "net/http"
 
 	"ECE461-Team1-Repository/configs"
 	"ECE461-Team1-Repository/routes"
@@ -151,29 +151,11 @@ func main() {
 
 	//run database
     configs.ConnectDB()
-	//routes
-    routes.RepoRoute(router) //add this
-
-	
 
 	router.Static("/assets", "./assets")
-	//router.LoadHTMLFiles("views/index.html")
 	router.LoadHTMLGlob("views/*")
-	//router.LoadHTMLFiles("views/like_button.js")
 
-	// router.GET("/repos", jsonOutput)
-
-	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title": "hello world",
-		})
-	})
-
-	// router.GET("/loggedin.html", func(c *gin.Context) {
-	// 	c.HTML(http.StatusOK, "loggedin.html", gin.H{
-	// 		"title": "hello world",
-	// 	})
-	// })
+	routes.RepoRoute(router)
 
 	router.Run("localhost:5500")
 }
