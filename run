@@ -38,6 +38,7 @@ function run {
     (./main/main $1)
 }
 
+export $(cat .env | xargs)
 case "$1" in
     # "export")
     #     $(export $(cat .env | xargs))
