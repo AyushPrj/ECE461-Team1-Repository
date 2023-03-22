@@ -412,7 +412,6 @@ func CheckRepoForTest(repo Repo) float64 {
 	for _, val := range temp {
 
 		currentFile := val.Name()
-		// ADD A TEST HERE
 
 		if currentFile == "test" {
 			testFound = 1.0
