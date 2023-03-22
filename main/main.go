@@ -13,9 +13,13 @@ import (
 	"strings"
 
 	//rest api
-	"encoding/json"
-	"net/http"
+	// "encoding/json"
+	// "net/http"
 
+	"ECE461-Team1-Repository/configs"
+	"ECE461-Team1-Repository/routes"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -114,27 +118,44 @@ func cli() []Link {
 }
 
 func printOutput(links []Link) {
-	for _, link := range links {
-		fmt.Println(link.ndjson)
-	}
+	//for _, link := range links {
+	fmt.Println(links)
+	//
 }
 
-var links []Link
-var reposJson map[string]interface{}
+// var links []Link
+// type reposJson map[string]interface{}
+// type arr_repos []map[string]interface{}
 
-func jsonOutput(c *gin.Context) {
-	for _, link := range links {
-		json.Unmarshal([]byte(link.ndjson), &reposJson)
-		c.IndentedJSON(http.StatusOK, reposJson)
-		fmt.Println(link.ndjson)
-	}
-}
+// func jsonOutput(c *gin.Context) {
+// 	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list
+
+// 	for _, link := range links {
+// 		newjson := make(reposJson)
+// 		json.Unmarshal([]byte(link.ndjson), &newjson)
+// 		allrepos = append(allrepos, newjson)
+// 	}
+
+// 	c.IndentedJSON(http.StatusOK, allrepos)
+// }
 
 func main() {
-	links = cli()
+	//links = cli()
 
 	router := gin.Default()
-	router.GET("/repos", jsonOutput)
-	router.Run("localhost:8080")
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"POST", "PUT", "PATCH", "DELETE"},
+		AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
+	}))
 
+	//run database
+    configs.ConnectDB()
+
+	router.Static("/assets", "./assets")
+	router.LoadHTMLGlob("views/*")
+
+	routes.RepoRoute(router)
+
+	router.Run("localhost:5500")
 }
