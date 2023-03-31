@@ -53,6 +53,13 @@ func TestGetIssuesCount(t *testing.T) {
 	}
 }
 
+func TestDepPinRate(t *testing.T) {
+	tst := GetDepPinRate("expressjs", "express")
+	if tst > 1 {
+		t.Fatal("Error getting dependency pin rate!")
+	}
+}
+
 func TestGetReadmeUrl(t *testing.T) {
 	tst := Repo{FullName: "expressjs/express"}
 	if getReadmeURL(tst) != "https://raw.githubusercontent.com/expressjs/express/master/Readme.md" {
@@ -87,10 +94,14 @@ func TestGetLicense(t *testing.T) {
 func TestCloning(t *testing.T) {
 	tst := Repo{CloneURL: "https://github.com/expressjs/express.git", Name: "express"}
 	if RunClocOnRepo(tst)[0] != ' ' {
-		t.Fatal("Error cloning repository!")
+		t.Fatal("Cloc: Error cloning repository!")
 	}
 
 	if CheckRepoForTest(tst) != 1.0 {
-		t.Fatal("Error cloning repository!")
+		t.Fatal("Checking: Error cloning repository!")
+	}
+
+	if CountReviewedLines(tst) < 0 {
+		t.Fatal("Counting: Error cloning repository!")
 	}
 }

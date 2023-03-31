@@ -11,6 +11,16 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	//rest api
+	// "encoding/json"
+	// "net/http"
+
+	"ECE461-Team1-Repository/configs"
+	"ECE461-Team1-Repository/routes"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 type Link struct {
@@ -30,7 +40,7 @@ func init() {
 	LOG_FILE = log.LOG_FILE
 }
 
-func main() {
+func cli() []Link {
 	// Initialize the log file
 	f, err := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil && LOG_LEVEL != "0" {
@@ -103,11 +113,49 @@ func main() {
 	// metrics.GetMetrics("nullivex/nodist", GITHUB_TOKEN)
 
 	// Display the metrics in the stored ndjson format
-	printOutput(links)
+	// printOutput(links)
+	return links
 }
 
 func printOutput(links []Link) {
-	for _, link := range links {
-		fmt.Println(link.ndjson)
-	}
+	//for _, link := range links {
+	fmt.Println(links)
+	//
+}
+
+// var links []Link
+// type reposJson map[string]interface{}
+// type arr_repos []map[string]interface{}
+
+// func jsonOutput(c *gin.Context) {
+// 	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list
+
+// 	for _, link := range links {
+// 		newjson := make(reposJson)
+// 		json.Unmarshal([]byte(link.ndjson), &newjson)
+// 		allrepos = append(allrepos, newjson)
+// 	}
+
+// 	c.IndentedJSON(http.StatusOK, allrepos)
+// }
+
+func main() {
+	//links = cli()
+
+	router := gin.Default()
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"POST", "PUT", "PATCH", "DELETE"},
+		AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
+	}))
+
+	//run database
+    configs.ConnectDB()
+
+	router.Static("/assets", "./assets")
+	router.LoadHTMLGlob("views/*")
+
+	routes.RepoRoute(router)
+
+	router.Run("localhost:5500")
 }
