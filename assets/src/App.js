@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+const JSZip = require('jszip');
 
 function App() {
   const [response, setResponse] = useState(null);
@@ -18,11 +19,34 @@ function App() {
     try {
       const formData = new FormData();
       formData.append('userInput', inputValue);
-      formData.append('zipFile', zipFile);
+      //formData.append('zipFile', zipFile);
+      const zip = await JSZip.loadAsync(await zipFile);
+      const files = zip.files;
+      const fileData = {};
+      var fileName;
+      for (const fileName in files) {
+        const file = files[fileName];
+        const fileContent = await file.async('uint8array');
+        fileData[fileName] = fileContent;
+      }
+      fileName = files[0]
+      
+      let zipfilename = zipFile.name;
+      
+      const nameArray = zipfilename.split("-");
+      zipfilename = zipfilename.substring(0, zipfilename.length - nameArray[nameArray.length - 1].length - 1)
+
+      let name = "cloudinary/cloudinary-video-player"
+
+      // const res0 = await fetch('http://localhost:5500/raterepo', {
+      //   method: 'GET',
+      //   body: urlname,
+      // });
 
       const res = await fetch('http://localhost:5500/repo', {
         method: 'POST',
-        body: formData,
+        //body: "{\r\n    \"name\": \"cloudinar5\",\r\n    \"rampup\": 0.23,\r\n    \"correctness\": 1,\r\n    \"responsivemaintainer\": 0.5,\r\n    \"busfactor\": 0.4,\r\n    \"reviewcoverage\": 0.2,\r\n    \"dependancypinning\": 0.6,\r\n    \"license\": 1,\r\n    \"net\": 0.8\r\n}",
+        body: `{"url": "${name}"}`
       });
 
       const json = await res.json();

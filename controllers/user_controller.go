@@ -2,10 +2,11 @@ package controllers
 
 import (
 	"ECE461-Team1-Repository/configs"
+	"ECE461-Team1-Repository/metrics"
 	"ECE461-Team1-Repository/models"
 	"ECE461-Team1-Repository/responses"
 	"context"
-	//"fmt"
+	"fmt"
 
 	//"io"
 	"net/http"
@@ -23,6 +24,9 @@ import (
 
 var repoCollection *mongo.Collection = configs.GetCollection(configs.DB, "repos")
 var validate = validator.New()
+type resp struct {
+	Url string `json:"url"`
+}
 
 func CreateRepo() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -31,17 +35,26 @@ func CreateRepo() gin.HandlerFunc {
 
 		defer cancel()
 
+		var respbody resp
+		c.BindJSON(&respbody)
+		fmt.Println("in create repo")
+		fmt.Println(respbody.Url)
+
+		ndjson := metrics.GetMetrics("https://github.com", 1, respbody.Url)
+
+		fmt.Println(ndjson)
+
 		// //validate the request body (populates the repo)
-		payload := strings.NewReader(`{`+" "+` "name": "cloudinar42",`+" "+`"rampup": 0.23,`+""+`"correctness": 1,`+""+`"responsivemaintainer": 0.5,`+""+`
-		     "busfactor": 0.4,`+""+`"reviewcoverage": 0.2,`+""+`"dependancypinning": 0.6,`+""+`"license": 1,`+""+`"net": 0.8`+""+`}`)
+		payload := strings.NewReader(`{` + " " + ` "name": "cloudinar42",` + " " + `"rampup": 0.23,` + "" + `"correctness": 1,` + "" + `"responsivemaintainer": 0.5,` + "" + `
+		     "busfactor": 0.4,` + "" + `"reviewcoverage": 0.2,` + "" + `"dependancypinning": 0.6,` + "" + `"license": 1,` + "" + `"net": 0.8` + "" + `}`)
 
 		// payload = io.reader(payload)
 		// rc, ok := payload.(io.ReadCloser)
 		// if !ok && payload != nil {
 		//         rc = io.NopCloser(payload)
 		// }
-        c.Request.Body = ioutil.NopCloser(payload)
-        if err := c.BindJSON(&repo); err != nil {
+		c.Request.Body = ioutil.NopCloser(payload)
+		if err := c.BindJSON(&repo); err != nil {
 			// c.Request.Body = payload
 			c.JSON(http.StatusBadRequest, responses.RepoResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -204,6 +217,14 @@ func GetAllRepos() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK,
 			responses.RepoResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": repos}},
+		)
+	}
+}
+
+func GetMetrics() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK,
+			responses.RepoResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": c.Request.Body}},
 		)
 	}
 }
