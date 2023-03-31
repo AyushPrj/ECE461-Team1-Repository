@@ -5,7 +5,7 @@ import (
 	"ECE461-Team1-Repository/log"
 	"fmt"
 	"regexp"
-	//"strconv"
+	"strconv"
 )
 
 func getBusFactor(url string) float32 {
@@ -44,39 +44,38 @@ number of commented lines of code and the total number of lines of code. The rat
 */
 func getRampUpScore(repo api.Repo) (float32, int) {
 
-	// clocString := api.RunClocOnRepo(repo)
-	// regMatch := regexp.MustCompile(`.*SUM:\s*\d*\s*\d*\s*(\d*)\s*(\d*)`).FindStringSubmatch(clocString)
-	// if len(regMatch) < 3 {
-	// 	log.Println(log.DEBUG, "Regex could find no match")
-	// 	return 0,0
-	// }
+	clocString := api.RunClocOnRepo(repo)
+	regMatch := regexp.MustCompile(`.*SUM:\s*\d*\s*\d*\s*(\d*)\s*(\d*)`).FindStringSubmatch(clocString)
+	if len(regMatch) < 3 {
+		log.Println(log.DEBUG, "Regex could find no match")
+		return 0,0
+	}
 
-	// commentLines := regMatch[1]
-	// codeLines := regMatch[2]
+	commentLines := regMatch[1]
+	codeLines := regMatch[2]
 
-	// commentLinesVal, err := strconv.Atoi(commentLines)
+	commentLinesVal, err := strconv.Atoi(commentLines)
 
-	// if err != nil {
-	// 	log.Println(log.DEBUG, err)
-	// }
+	if err != nil {
+		log.Println(log.DEBUG, err)
+	}
 
-	// codeLinesVal, err := strconv.Atoi(codeLines)
+	codeLinesVal, err := strconv.Atoi(codeLines)
 
-	// if err != nil {
-	// 	log.Println(log.DEBUG, err)
-	// }
+	if err != nil {
+		log.Println(log.DEBUG, err)
+	}
 
-	// var score float32
-	// if codeLinesVal != 0 {
-	// 	score = float32(commentLinesVal) / float32(codeLinesVal)
-	// } else {
-	// 	score = 0
-	// }
-	// // insert scaling factor here
-	// score = RampUpScaler(score)
+	var score float32
+	if codeLinesVal != 0 {
+		score = float32(commentLinesVal) / float32(codeLinesVal)
+	} else {
+		score = 0
+	}
+	// insert scaling factor here
+	score = RampUpScaler(score)
 
-	//return score, codeLinesVal
-	return 0.3, 3000
+	return score, codeLinesVal
 }
 
 /*
