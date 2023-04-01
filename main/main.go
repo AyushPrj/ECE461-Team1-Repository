@@ -88,7 +88,6 @@ func cli() []Link {
 		}
 
 		// get the metrics in ndjson format for each link and add to list
-		// fmt.Printf("%s\n", tmpName)
 		netscore, ndjson := metrics.GetMetrics(each_ln, tmpSite, tmpName)
 		newLink := Link{site: tmpSite, name: tmpName, netScore: netscore, ndjson: ndjson}
 		links = append(links, newLink)
@@ -140,7 +139,8 @@ func printOutput(links []Link) {
 // }
 
 func main() {
-	//links = cli()
+	// Comment this out later
+	// links := cli()
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
@@ -150,7 +150,7 @@ func main() {
 	}))
 
 	//run database
-    configs.ConnectDB()
+	 configs.ConnectDB()
 
 	router.Static("/assets", "./assets")
 	router.LoadHTMLGlob("views/*")

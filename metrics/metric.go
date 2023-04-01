@@ -96,7 +96,6 @@ func RampUpScaler(score float32) float32 {
 		score = score/denomConst + 1
 		return score
 	}
-
 }
 
 /*
@@ -112,7 +111,12 @@ getReviewCoverage returns lines added from pull requests divided by total lines.
 */
 
 func getReviewCoverage(repo api.Repo, numLines int) float32 {
-	return float32(api.CountReviewedLines(repo)) / float32(numLines)
+	reviewLines := api.CountReviewedLines(repo)
+	if (reviewLines > numLines) {
+		log.Println(log.DEBUG, "ERROR: Lines reviewed > numlines")
+		return 1.0
+	}
+	return float32(reviewLines) / float32(numLines)
 }
 
 /*
@@ -161,7 +165,7 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 		`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "DEPENDENCY_PINNING_RATE":` + fmt.Sprintf("%.2f", depPinRate) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
 
 	log.Printf(log.DEBUG, ndjson)
-	// fmt.Println(netScore)
+	fmt.Println(netScore)
 
 	return netScore, ndjson
 }
