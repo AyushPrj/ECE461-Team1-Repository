@@ -123,7 +123,7 @@ func getReviewCoverage(repo api.Repo, numLines int) float32 {
 GetMetrics calculates rating for the input repo
 */
 
-func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
+func GetMetrics(baseURL string, siteType int, name string) (string) {
 	var repo api.Repo
 
 	if siteType == api.NPM {
@@ -167,5 +167,5 @@ func GetMetrics(baseURL string, siteType int, name string) (float32, string) {
 	log.Printf(log.DEBUG, ndjson)
 	fmt.Println(netScore)
 
-	return netScore, ndjson
+	return ndjson
 }
