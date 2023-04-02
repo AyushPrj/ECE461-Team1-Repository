@@ -4,8 +4,8 @@ function help() {
   echo '------------- ./run Commands ----------------------'
   echo 'Usage: ./run [install|build|test]'
   echo 'install  - Installs any dependencies in userland'
-  echo 'build    - Completes any compilation needed' 
-  echo 'test     - Runs go.tests' 
+  echo 'build    - Completes any compilation needed'
+  echo 'test     - Runs go.tests'
   echo 'ADD MORE EXPLANATION HERE'
   echo '---------------------------------------------------'
 }
@@ -31,7 +31,7 @@ function test {
     CNT2=$((cd log; go test -cover -v) | grep -c PASS)
     CNT3=$((cd metrics; go test -cover -v) | grep -c PASS)
     CNT=$((CNT1 + CNT2 + CNT3 + 1))
-    echo "${CNT}/25 test cases passed."
+    echo "${CNT}/26 test cases passed."
 }
 
 function run {

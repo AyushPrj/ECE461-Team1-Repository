@@ -1,0 +1,9 @@
+https://github.com/cloudinary/cloudinary_npm
+https://github.com/appfeel/jsobjects
+https://www.npmjs.com/package/express
+https://github.com/nullivex/nodist
+https://github.com/lodash/lodash
+https://www.npmjs.com/package/browserify
+https://github.com/acestti/epics
+https://github.com/jquery/jquery
+https://github.com/serkanyersen/ifvisible.js

@@ -12,10 +12,10 @@ func TestBusFactor(t *testing.T) {
 	}
 }
 
-func TestResponsiveness(t *testing.T) {
+func TestResponsivenessAndDepPinRate(t *testing.T) {
 	owner := "cloudinary"
 	name := "cloudinary_npm"
-	if getResponsivenessScore(owner, name) > 1 {
+	if getResponsivenessScore(owner, name) > 1  || getDepPinRate(owner, name) > 1 {
 		t.Fatal("Responsiveness Failed")
 	}
 }
