@@ -56,7 +56,7 @@ func CreateRepo() gin.HandlerFunc {
 			Responsivemaintainer float64 `json:"RESPONSIVE_MAINTAINER_SCORE"`
 			Busfactor           float64 `json:"BUS_FACTOR_SCORE"`
 			Reviewcoverage      float64 `json:"REVIEW_COVERAGE_SCORE"`
-			Dependancypinning   float64 `json:"DEPENDANCY_PINNING_SCORE"`
+			Dependancypinning   float64 `json:"DEPENDENCY_PINNING_RATE"`
 			License             int     `json:"LICENSE_SCORE"`
 			Net                 float64 `json:"NET_SCORE"`
 		}
@@ -69,7 +69,7 @@ func CreateRepo() gin.HandlerFunc {
 			return
 		}
 
-		ndjsonData.Reviewcoverage = 0.32
+		// ndjsonData.Reviewcoverage = 0.32
 		ndjsonData.Dependancypinning = 0.42
 		
 		//payload := strings.NewReader(fmt.Sprintf(`{ "name": "%s", "rampup": %f, "correctness": %d, "responsivemaintainer": %f, "busfactor": %f, "reviewcoverage": %f, "dependancypinning": %f, "license": %d, "net": %f }`, ndjsonData.Name, ndjsonData.Rampup, ndjsonData.Correctness, ndjsonData.Responsivemaintainer, ndjsonData.Busfactor, ndjsonData.Reviewcoverage, ndjsonData.Dependancypinning, ndjsonData.License, ndjsonData.Net))
@@ -88,7 +88,6 @@ func CreateRepo() gin.HandlerFunc {
 		}`)
 		fmt.Println(payload)
 		//fmt.Println(payload2)
-
 
 
 		// payload = io.reader(payload)

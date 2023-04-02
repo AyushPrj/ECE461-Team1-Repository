@@ -4,13 +4,13 @@ package models
 
 type Repo struct {
 	//Id                   primitive.ObjectID `json:"id,omitempty"`
-	Name                 string             `json:"name,omitempty" validate:"required"`
-	RampUp               float64            `json:"rampup,omitempty" validate:"required"`
-	Correctness          float64            `json:"correctness,omitempty" validate:"required"`
-	ResponsiveMaintainer float64            `json:"responsivemaintainer,omitempty" validate:"required"`
-	BusFactor            float64            `json:"busfactor,omitempty" validate:"required"`
-	ReviewCoverage       float64            `json:"reviewcoverage,omitempty" validate:"required"`
-	DependancyPinning    float64            `json:"dependancypinning,omitempty" validate:"required"`
-	License              int            `json:"license,omitempty" validate:"required"`
-	Net                  float64            `json:"net,omitempty" validate:"required"`
+	Name                 string             `json:"name,omitempty" validate:""`
+	RampUp               float64            `json:"rampup" validate:""`
+	Correctness          float64            `json:"correctness" validate:""`
+	ResponsiveMaintainer float64            `json:"responsivemaintainer" validate:""`
+	BusFactor            float64            `json:"busfactor" validate:""`
+	ReviewCoverage       float64            `json:"reviewcoverage" validate:""`
+	DependancyPinning    float64            `json:"dependancypinning" validate:""`
+	License              int            	`json:"license" validate:""`
+	Net                  float64            `json:"net" validate:""`
 }
