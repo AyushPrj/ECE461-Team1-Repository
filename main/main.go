@@ -88,8 +88,7 @@ func cli(toRateURL string) Link {
 		}
 
 		// get the metrics in ndjson format for each link and add to list
-		// fmt.Printf("%s\n", tmpName)
-		netscore, ndjson := metrics.GetMetrics(toRateURL, tmpSite, tmpName)
+		netscore, ndjson := metrics.GetMetrics(each_ln, tmpSite, tmpName)
 		newLink := Link{site: tmpSite, name: tmpName, netScore: netscore, ndjson: ndjson}
 		return newLink
 	//}
@@ -156,9 +155,9 @@ func main() {
 	//The method os.File.Close() is called on the os.File object to close the file
 	file.Close()
 
-	for _, each_repo := range text {
-		links = append(links, cli(each_repo))
-	}
+	// for _, each_repo := range text {
+	// 	links = append(links, cli(each_repo))
+	// }
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
@@ -168,7 +167,7 @@ func main() {
 	}))
 
 	//run database
-    configs.ConnectDB()
+	 configs.ConnectDB()
 
 	// router.Static("/assets", "./assets")
 	// router.LoadHTMLGlob("views/*")

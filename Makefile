@@ -15,7 +15,7 @@ install:
 	./${EXEC} install
 
 build:
-	@# Help: Builds project 
+	@# Help: Builds project
 	./${EXEC} build
 
 test: build
@@ -23,8 +23,12 @@ test: build
 	./${EXEC} test
 
 test1: build
-	@# Help: text.txt in main
-	./${EXEC} ./main/test.txt
+	@# Help: text1.txt in main
+	./${EXEC} ./main/test1.txt
+
+test2: build
+	@# Help: text2.txt in main
+	./${EXEC} ./main/test2.txt
 
 status:
 	@# Help: Runs git status
@@ -45,9 +49,9 @@ pull:
 
 # EXAMPLE @rm -rf ________ || true
 clean:
-	@# Help: Removes unnecessary files 
+	@# Help: Removes unnecessary files
 	rm -f *.log *.exe
-	cd log; rm -f *.log 
+	cd log; rm -f *.log
 	cd main; rm -f *.log *.exe
 
 .PHONY: help install build test git pull clean

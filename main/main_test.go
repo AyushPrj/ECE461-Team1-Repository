@@ -7,6 +7,6 @@ import (
 
 // Integration Test
 func TestMain(t *testing.T) {
-	os.Args = []string{"main", "test.txt"}
+	os.Args = []string{"main", "test1.txt"}
 	main()
 }
