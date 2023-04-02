@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-const { readUrlFromZip } = require('./readUrlFromZip');
 const JSZip = require('jszip');
 
 function App() {
@@ -16,29 +15,6 @@ function App() {
     setZipFile(event.target.files[0]);
   };
 
-  // const handleCreateRepoClick = async () => {
-  //   try {
-  //     const formData = new FormData();
-  //     formData.append('userInput', inputValue);
-  //     formData.append('zipFile', zipFile);
-
-  //     //const nameArray = zipfilename.split("-");
-  //     //zipfilename = zipfilename.substring(0, zipfilename.length - nameArray[nameArray.length - 1].length - 1)
-
-  //     //let name = "cloudinary/cloudinary-video-player"
-
-  //     // const res = await fetch('http://localhost:5500/repo', {
-  //     //   method: 'POST',
-  //     //   //body: "{\r\n    \"name\": \"cloudinar5\",\r\n    \"rampup\": 0.23,\r\n    \"correctness\": 1,\r\n    \"responsivemaintainer\": 0.5,\r\n    \"busfactor\": 0.4,\r\n    \"reviewcoverage\": 0.2,\r\n    \"dependancypinning\": 0.6,\r\n    \"license\": 1,\r\n    \"net\": 0.8\r\n}",
-  //     //   body: `{"url": "${name}"}`
-  //     // });
-
-  //     //const json = await res.json();
-  //     //setResponse(json);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
   const handleCreateRepoClick = async () => {
     try {
       console.log("START");
