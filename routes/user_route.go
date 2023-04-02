@@ -11,4 +11,5 @@ func RepoRoute(router *gin.Engine) {
 	router.PUT("/repo/:repoId", controllers.EditARepo())
 	router.DELETE("/repo/:repoId", controllers.DeleteARepo())
 	router.GET("/repos", controllers.GetAllRepos())
+	router.GET("/raterepo", controllers.GetMetrics())
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+const JSZip = require('jszip');
 
 function App() {
   const [response, setResponse] = useState(null);
@@ -16,21 +17,58 @@ function App() {
 
   const handleCreateRepoClick = async () => {
     try {
-      const formData = new FormData();
-      formData.append('userInput', inputValue);
-      formData.append('zipFile', zipFile);
+      console.log("START");
 
-      const res = await fetch('http://localhost:5500/repo', {
-        method: 'POST',
-        body: formData,
+      const reader = new FileReader();
+
+      reader.addEventListener('load', async () => {
+        const buffer = reader.result;
+
+        const zip = new JSZip();
+        await zip.loadAsync(buffer);
+
+        // get the first folder in the zip archive
+        const firstFolderName = Object.keys(zip.files).find(name => {
+          return name.endsWith('/') && name.split('/').length === 2;
+        });
+
+        if (!firstFolderName) {
+          throw new Error('No folder found in zip archive');
+        }
+
+        // access the package.json file within the first folder
+        const packageJsonText = await zip.file(`${firstFolderName}package.json`).async('text');
+
+        // parse the JSON string and access the url field within the repository field
+        const packageJson = JSON.parse(packageJsonText);
+        let url = packageJson.repository.url;
+
+        // remove anything before and including the third /
+        const urlParts = url.split('/');
+        urlParts.splice(0, 3);
+        url = urlParts.join('/');
+
+        // strip the last 4 characters from the url
+        url = url.slice(0, -4);
+
+        console.log("Fetch");
+        const res = await fetch('http://localhost:5500/repo', {
+          method: 'POST',
+          body: `{"url": "${url}"}`
+        });
+
+        const json = await res.json();
+        setResponse(json);
+
+        console.log(url);
       });
 
-      const json = await res.json();
-      setResponse(json);
-    } catch (error) {
-      console.error(error);
+      reader.readAsArrayBuffer(zipFile);
+    } catch (err) {
+      console.error(err);
     }
   };
+
 
   const handleGetRepoClick = async () => {
     try {
