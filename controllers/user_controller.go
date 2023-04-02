@@ -6,10 +6,12 @@ import (
 	"ECE461-Team1-Repository/models"
 	"ECE461-Team1-Repository/responses"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	//"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"io/ioutil"
@@ -24,13 +26,15 @@ import (
 
 var repoCollection *mongo.Collection = configs.GetCollection(configs.DB, "repos")
 var validate = validator.New()
+
 type resp struct {
 	Url string `json:"url"`
 }
 
 func CreateRepo() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		var repo models.Repo
 
 		defer cancel()
@@ -42,11 +46,50 @@ func CreateRepo() gin.HandlerFunc {
 
 		ndjson := metrics.GetMetrics("https://github.com", 1, respbody.Url)
 
-		fmt.Println(ndjson)
+		//if netscore is good...
+		//upload zip file
 
-		// //validate the request body (populates the repo)
-		payload := strings.NewReader(`{` + " " + ` "name": "cloudinar42",` + " " + `"rampup": 0.23,` + "" + `"correctness": 1,` + "" + `"responsivemaintainer": 0.5,` + "" + `
-		     "busfactor": 0.4,` + "" + `"reviewcoverage": 0.2,` + "" + `"dependancypinning": 0.6,` + "" + `"license": 1,` + "" + `"net": 0.8` + "" + `}`)
+		type NDJSON struct {
+			Name                string  `json:"URL"`
+			Rampup              float64 `json:"RAMP_UP_SCORE"`
+			Correctness         float64 `json:"CORRECTNESS_SCORE"`
+			Responsivemaintainer float64 `json:"RESPONSIVE_MAINTAINER_SCORE"`
+			Busfactor           float64 `json:"BUS_FACTOR_SCORE"`
+			Reviewcoverage      float64 `json:"REVIEW_COVERAGE_SCORE"`
+			Dependancypinning   float64 `json:"DEPENDANCY_PINNING_SCORE"`
+			License             int     `json:"LICENSE_SCORE"`
+			Net                 float64 `json:"NET_SCORE"`
+		}
+		
+		
+		var ndjsonData NDJSON
+		
+		err := json.Unmarshal([]byte(ndjson), &ndjsonData)
+		if err != nil {
+			return
+		}
+
+		ndjsonData.Reviewcoverage = 0.32
+		ndjsonData.Dependancypinning = 0.42
+		
+		//payload := strings.NewReader(fmt.Sprintf(`{ "name": "%s", "rampup": %f, "correctness": %d, "responsivemaintainer": %f, "busfactor": %f, "reviewcoverage": %f, "dependancypinning": %f, "license": %d, "net": %f }`, ndjsonData.Name, ndjsonData.Rampup, ndjsonData.Correctness, ndjsonData.Responsivemaintainer, ndjsonData.Busfactor, ndjsonData.Reviewcoverage, ndjsonData.Dependancypinning, ndjsonData.License, ndjsonData.Net))
+		//payload := strings.NewReader(`{` + " " + ` "name": `+ ndjsonData.Name + `,` + " " + `"rampup": ` + strconv.FormatFloat(ndjsonData.Rampup, 'f', 2, 64) + `,` + "" + `"correctness": `+strconv.FormatFloat(ndjsonData.Correctness, 'f', 1, 64)+`,` + "" + `"responsivemaintainer": `+strconv.FormatFloat(ndjsonData.Responsivemaintainer, 'f', 2, 64)+`,` + "" + `
+		//"busfactor": `+strconv.FormatFloat(ndjsonData.Busfactor, 'f', 2, 64)+`,` + "" + `"reviewcoverage": `+strconv.FormatFloat(ndjsonData.Reviewcoverage, 'f', 2, 64)+`,` + "" + `"dependancypinning": `+strconv.FormatFloat(ndjsonData.Dependancypinning, 'f', 2, 64)+`,` + "" + `"license": `+strconv.Itoa(ndjsonData.License)+`,` + "" + `"net": `+strconv.FormatFloat(ndjsonData.Net, 'f', 2, 64)+ "" + `}`)		
+		payload := strings.NewReader(`{
+			"name": "` + ndjsonData.Name + `",
+			"rampup": ` + strconv.FormatFloat(ndjsonData.Rampup, 'f', 2, 64) + `,
+			"correctness": ` + strconv.FormatFloat(ndjsonData.Correctness, 'f', 1, 64) + `,
+			"responsivemaintainer": ` + strconv.FormatFloat(ndjsonData.Responsivemaintainer, 'f', 2, 64) + `,
+			"busfactor": ` + strconv.FormatFloat(ndjsonData.Busfactor, 'f', 2, 64) + `,
+			"reviewcoverage": ` + strconv.FormatFloat(ndjsonData.Reviewcoverage, 'f', 2, 64) + `,
+			"dependancypinning": ` + strconv.FormatFloat(ndjsonData.Dependancypinning, 'f', 2, 64) + `,
+			"license": ` + strconv.Itoa(ndjsonData.License) + `,
+			"net": ` + strconv.FormatFloat(ndjsonData.Net, 'f', 2, 64) + `
+		}`)
+		fmt.Println(payload)
+		//fmt.Println(payload2)
+
+
 
 		// payload = io.reader(payload)
 		// rc, ok := payload.(io.ReadCloser)
@@ -90,6 +133,7 @@ func CreateRepo() gin.HandlerFunc {
 		//     Net: 0.8,
 		// }
 
+		fmt.Println("inserting: " + newRepo.Name)
 		result, err := repoCollection.InsertOne(ctx, newRepo)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})

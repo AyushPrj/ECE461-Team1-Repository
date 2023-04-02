@@ -11,6 +11,6 @@ type Repo struct {
 	BusFactor            float64            `json:"busfactor,omitempty" validate:"required"`
 	ReviewCoverage       float64            `json:"reviewcoverage,omitempty" validate:"required"`
 	DependancyPinning    float64            `json:"dependancypinning,omitempty" validate:"required"`
-	License              float64            `json:"license,omitempty" validate:"required"`
+	License              int            `json:"license,omitempty" validate:"required"`
 	Net                  float64            `json:"net,omitempty" validate:"required"`
 }
