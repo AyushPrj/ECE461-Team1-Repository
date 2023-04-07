@@ -3,272 +3,410 @@ package controllers
 import (
 	"ECE461-Team1-Repository/configs"
 	"ECE461-Team1-Repository/metrics"
-	"ECE461-Team1-Repository/models"
-	"ECE461-Team1-Repository/responses"
+	models "ECE461-Team1-Repository/models"
 	"context"
 	"encoding/json"
 	"fmt"
 
-	//"io"
-	"net/http"
-	"strconv"
-	"time"
-
-	"io/ioutil"
+	//"fmt"
+	"regexp"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+	//"io"
+	"net/http"
+	"path"
+
 	"go.mongodb.org/mongo-driver/bson" //add this
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var repoCollection *mongo.Collection = configs.GetCollection(configs.DB, "repos")
-var validate = validator.New()
+var contentCollection *mongo.Collection = configs.GetCollection(configs.DB, "largeStrings")
 
-type resp struct {
-	Url string `json:"url"`
+func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
 }
 
-func CreateRepo() gin.HandlerFunc {
-	return func(c *gin.Context) {
+type Response struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-		var repo models.Repo
+func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
+	authToken := r.Header.Get("X-Authorization")
+	if authToken == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(Response{
+			Status:  "error",
+			Message: "Missing X-Authorization header",
+		})
+		return
+	}
 
-		defer cancel()
+	// Implement your authentication and authorization logic based on authToken
 
-		var respbody resp
-		c.BindJSON(&respbody)
-		fmt.Println("in create repo")
-		fmt.Println(respbody.Url)
+	packageName := r.URL.Query().Get("name")
+	if packageName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(Response{
+			Status:  "error",
+			Message: "There is missing field(s) in the PackageName/AuthenticationToken\\ or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
 
-		ndjson := metrics.GetMetrics("https://github.com", 1, respbody.Url)
+	filter := bson.M{"name": packageName}
+	result, err := repoCollection.DeleteMany(context.Background(), filter)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(Response{
+			Status:  "error",
+			Message: "There is missing field(s) in the PackageName/AuthenticationToken\\ or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
 
-		//if netscore is good...
-		//upload zip file
+	if result.DeletedCount == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(Response{
+			Status:  "error",
+			Message: "Package does not exist.",
+		})
+		return
+	}
 
+	response := Response{
+		Status:  "success",
+		Message: "Package is deleted.",
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
+	authToken := r.Header.Get("X-Authorization")
+	if authToken == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Missing X-Authorization header",
+		})
+		return
+	}
+
+	// Implement your authentication and authorization logic based on authToken
+
+	packageName := r.URL.Query().Get("name")
+	if packageName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Missing package name in the path",
+		})
+		return
+	}
+
+	filter := bson.M{"name": packageName}
+	findOptions := options.Find()
+	var packageHistory []models.PackageHistoryEntry
+
+	cursor, err := repoCollection.Find(context.Background(), filter, findOptions)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Error retrieving package history",
+		})
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	if err := cursor.All(context.Background(), &packageHistory); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Error decoding package history",
+		})
+		return
+	}
+
+	if len(packageHistory) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Package not found",
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(packageHistory)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+type PackageRegExRequest struct {
+	RegEx string `json:"regex"`
+}
+
+func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
+	authToken := r.Header.Get("X-Authorization")
+	if authToken == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Missing X-Authorization header",
+		})
+		return
+	}
+
+	// Implement your authentication and authorization logic based on authToken
+
+	var packageRegExRequest PackageRegExRequest
+	err := json.NewDecoder(r.Body).Decode(&packageRegExRequest)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Invalid JSON in request body",
+		})
+		return
+	}
+
+	findOptions := options.Find()
+	var packages []models.PackageMetadata
+	cursor, err := repoCollection.Find(context.Background(), bson.D{}, findOptions)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Error retrieving packages",
+		})
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	if err := cursor.All(context.Background(), &packages); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Error decoding packages",
+		})
+		return
+	}
+
+	regex, err := regexp.Compile(packageRegExRequest.RegEx)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Invalid regular expression",
+		})
+		return
+	}
+
+	matchingPackages := []models.PackageMetadata{}
+	for _, pkg := range packages {
+		if regex.MatchString(pkg.Name) && regex.MatchString(pkg.Version) {
+			matchingPackages = append(matchingPackages, pkg)
+		}
+	}
+
+	if len(matchingPackages) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "No packages found for the provided regex",
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(matchingPackages)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func PackageCreate(w http.ResponseWriter, r *http.Request) {
+	// Get the authentication token from the request header
+	authToken := r.Header.Get("X-Authorization")
+	if authToken == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "Missing or invalid authentication token",
+		})
+		return
+	}
+
+	// Decode the request body into a ModelPackage struct
+	//var modelPackage models.ModelPackage
+	var packageData models.PackageData
+	err := json.NewDecoder(r.Body).Decode(&packageData)
+	if err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+	var newMetadata models.PackageMetadata
+
+	repoPath := strings.TrimPrefix(packageData.URL, "https://github.com/")
+	username, repoName := path.Split(repoPath)
+	repoPath = strings.TrimSuffix(username+repoName, "/")
+
+	newMetadata.Name = path.Base(repoPath)
+
+	ver, e := extractVersionFromZip(packageData.Content)
+	largeString := packageData.Content
+	fileID, err := storeLargeString(contentCollection, largeString)
+	if err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+	packageData.Content = fileID.Hex()
+
+	if e {
+		newMetadata.Version = ver
+	} else {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	modelPackage := models.ModelPackage{
+		ID:       primitive.NewObjectID(),
+		Data:     &packageData,
+		Metadata: &newMetadata,
+	}
+	newMetadata.ID = modelPackage.ID.Hex()
+
+	fmt.Println(modelPackage.Metadata.Version)
+	// Check if the package already exists
+	if !packageExists(modelPackage.Metadata.Name, modelPackage.Metadata.Version) {
+
+		new_metrics := metrics.GetMetrics("https://github.com", 1, repoPath) //get metrics
 		type NDJSON struct {
-			Name                string  `json:"URL"`
-			Rampup              float64 `json:"RAMP_UP_SCORE"`
-			Correctness         float64 `json:"CORRECTNESS_SCORE"`
+			Name                 string  `json:"URL"`
+			Rampup               float64 `json:"RAMP_UP_SCORE"`
+			Correctness          float64 `json:"CORRECTNESS_SCORE"`
 			Responsivemaintainer float64 `json:"RESPONSIVE_MAINTAINER_SCORE"`
-			Busfactor           float64 `json:"BUS_FACTOR_SCORE"`
-			Reviewcoverage      float64 `json:"REVIEW_COVERAGE_SCORE"`
-			Dependancypinning   float64 `json:"DEPENDANCY_PINNING_SCORE"`
-			License             int     `json:"LICENSE_SCORE"`
-			Net                 float64 `json:"NET_SCORE"`
+			Busfactor            float64 `json:"BUS_FACTOR_SCORE"`
+			Reviewcoverage       float64 `json:"REVIEW_COVERAGE_SCORE"`
+			Dependancypinning    float64 `json:"DEPENDENCY_PINNING_RATE"`
+			License              int     `json:"LICENSE_SCORE"`
+			Net                  float64 `json:"NET_SCORE"`
 		}
-		
-		
+
 		var ndjsonData NDJSON
-		
-		err := json.Unmarshal([]byte(ndjson), &ndjsonData)
+
+		err := json.Unmarshal([]byte(new_metrics), &ndjsonData)
 		if err != nil {
 			return
 		}
 
-		ndjsonData.Reviewcoverage = 0.32
-		ndjsonData.Dependancypinning = 0.42
-		
-		//payload := strings.NewReader(fmt.Sprintf(`{ "name": "%s", "rampup": %f, "correctness": %d, "responsivemaintainer": %f, "busfactor": %f, "reviewcoverage": %f, "dependancypinning": %f, "license": %d, "net": %f }`, ndjsonData.Name, ndjsonData.Rampup, ndjsonData.Correctness, ndjsonData.Responsivemaintainer, ndjsonData.Busfactor, ndjsonData.Reviewcoverage, ndjsonData.Dependancypinning, ndjsonData.License, ndjsonData.Net))
-		//payload := strings.NewReader(`{` + " " + ` "name": `+ ndjsonData.Name + `,` + " " + `"rampup": ` + strconv.FormatFloat(ndjsonData.Rampup, 'f', 2, 64) + `,` + "" + `"correctness": `+strconv.FormatFloat(ndjsonData.Correctness, 'f', 1, 64)+`,` + "" + `"responsivemaintainer": `+strconv.FormatFloat(ndjsonData.Responsivemaintainer, 'f', 2, 64)+`,` + "" + `
-		//"busfactor": `+strconv.FormatFloat(ndjsonData.Busfactor, 'f', 2, 64)+`,` + "" + `"reviewcoverage": `+strconv.FormatFloat(ndjsonData.Reviewcoverage, 'f', 2, 64)+`,` + "" + `"dependancypinning": `+strconv.FormatFloat(ndjsonData.Dependancypinning, 'f', 2, 64)+`,` + "" + `"license": `+strconv.Itoa(ndjsonData.License)+`,` + "" + `"net": `+strconv.FormatFloat(ndjsonData.Net, 'f', 2, 64)+ "" + `}`)		
-		payload := strings.NewReader(`{
-			"name": "` + ndjsonData.Name + `",
-			"rampup": ` + strconv.FormatFloat(ndjsonData.Rampup, 'f', 2, 64) + `,
-			"correctness": ` + strconv.FormatFloat(ndjsonData.Correctness, 'f', 1, 64) + `,
-			"responsivemaintainer": ` + strconv.FormatFloat(ndjsonData.Responsivemaintainer, 'f', 2, 64) + `,
-			"busfactor": ` + strconv.FormatFloat(ndjsonData.Busfactor, 'f', 2, 64) + `,
-			"reviewcoverage": ` + strconv.FormatFloat(ndjsonData.Reviewcoverage, 'f', 2, 64) + `,
-			"dependancypinning": ` + strconv.FormatFloat(ndjsonData.Dependancypinning, 'f', 2, 64) + `,
-			"license": ` + strconv.Itoa(ndjsonData.License) + `,
-			"net": ` + strconv.FormatFloat(ndjsonData.Net, 'f', 2, 64) + `
-		}`)
-		fmt.Println(payload)
-		//fmt.Println(payload2)
-
-
-
-		// payload = io.reader(payload)
-		// rc, ok := payload.(io.ReadCloser)
-		// if !ok && payload != nil {
-		//         rc = io.NopCloser(payload)
-		// }
-		c.Request.Body = ioutil.NopCloser(payload)
-		if err := c.BindJSON(&repo); err != nil {
-			// c.Request.Body = payload
-			c.JSON(http.StatusBadRequest, responses.RepoResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-		}
-		//use the validator library to validate required fields
-		if validationErr := validate.Struct(&repo); validationErr != nil {
-			c.JSON(http.StatusBadRequest, responses.RepoResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
-			return
-		}
-
-		newRepo := models.Repo{
-			//Id:       primitive.NewObjectID(),
-			Name:                 repo.Name,
-			RampUp:               repo.RampUp,
-			Correctness:          repo.Correctness,
-			ResponsiveMaintainer: repo.ResponsiveMaintainer,
-			BusFactor:            repo.BusFactor,
-			ReviewCoverage:       repo.ReviewCoverage,
-			DependancyPinning:    repo.DependancyPinning,
-			License:              repo.License,
-			Net:                  repo.Net,
-		}
-		// newRepo := models.Repo{
-		//     //Id:       primitive.NewObjectID(),
-		//     Name:     "test",
-		//     RampUp:   0.2,
-		//     Correctness: 0.1,
-		//     ResponsiveMaintainer: 0.3,
-		//     BusFactor: 0.4,
-		//     ReviewCoverage: 0.5,
-		//     DependancyPinning: 0.6,
-		//     License: 1,
-		//     Net: 0.8,
-		// }
-
-		fmt.Println("inserting: " + newRepo.Name)
-		result, err := repoCollection.InsertOne(ctx, newRepo)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-		}
-
-		c.JSON(http.StatusCreated, responses.RepoResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
-	}
-}
-
-func GetARepo() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		repoId := c.Param("repoId")
-		var repo models.Repo
-		defer cancel()
-
-		objId, _ := primitive.ObjectIDFromHex(repoId)
-
-		err := repoCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&repo)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-		}
-
-		c.JSON(http.StatusOK, responses.RepoResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": repo}})
-	}
-}
-
-func EditARepo() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		repoId := c.Param("repoId")
-		var repo models.Repo
-		defer cancel()
-
-		objId, _ := primitive.ObjectIDFromHex(repoId)
-
-		//validate the request body
-		if err := c.BindJSON(&repo); err != nil {
-			c.JSON(http.StatusBadRequest, responses.RepoResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-		}
-
-		//use the validator library to validate required fields
-		if validationErr := validate.Struct(&repo); validationErr != nil {
-			c.JSON(http.StatusBadRequest, responses.RepoResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
-			return
-		}
-
-		update := bson.M{"name": repo.Name, "rampup": repo.RampUp, "correctness": repo.Correctness, "responsivemaintainer": repo.ResponsiveMaintainer, "busfactor": repo.BusFactor, "reviewcoverage": repo.ReviewCoverage,
-			"dependancypinning": repo.DependancyPinning, "license": repo.License, "net": repo.Net}
-		result, err := repoCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-		}
-
-		//get updated repo details
-		var updatedRepo models.Repo
-		if result.MatchedCount == 1 {
-			err := repoCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedRepo)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+		if ndjsonData.Net > 0.5 {
+			//insert
+			if _, err := repoCollection.InsertOne(context.Background(), modelPackage); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(models.ModelError{
+					Code:    http.StatusInternalServerError,
+					Message: "Failed to create package",
+				})
 				return
 			}
-		}
+			// Return the created package metadata
 
-		c.JSON(http.StatusOK, responses.RepoResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedRepo}})
-	}
-}
-
-func DeleteARepo() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		repoId := c.Param("repoId")
-		defer cancel()
-
-		objId, _ := primitive.ObjectIDFromHex(repoId)
-
-		result, err := repoCollection.DeleteOne(ctx, bson.M{"_id": objId})
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-		}
-
-		if result.DeletedCount < 1 {
-			c.JSON(http.StatusNotFound,
-				responses.RepoResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Repo with specified ID not found!"}},
-			)
-			return
-		}
-
-		c.JSON(http.StatusOK,
-			responses.RepoResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Repo successfully deleted!"}},
-		)
-	}
-}
-
-func GetAllRepos() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var repos []models.Repo
-		defer cancel()
-
-		results, err := repoCollection.Find(ctx, bson.M{})
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-		}
-
-		//reading from the db in an optimal way
-		defer results.Close(ctx)
-		for results.Next(ctx) {
-			var singleRepo models.Repo
-			if err = results.Decode(&singleRepo); err != nil {
-				c.JSON(http.StatusInternalServerError, responses.RepoResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			ls, err := readLargeString(contentCollection, modelPackage.Data.Content)
+			if err != nil {
+				return
 			}
-
-			repos = append(repos, singleRepo)
+			modelPackage.Data.Content = ls
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(modelPackage)
+			return
+		} else {
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    424,
+				Message: "Package is not uploaded due to the disqualified rating.",
+			})
+			return
 		}
-
-		c.JSON(http.StatusOK,
-			responses.RepoResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": repos}},
-		)
+	} else {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    409,
+			Message: "Package already exists",
+		})
+		return
 	}
+	// Generate a unique package ID and store the package in the database
 }
 
-func GetMetrics() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(http.StatusOK,
-			responses.RepoResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": c.Request.Body}},
-		)
+func packageExists(name string, version string) bool { //other page?
+	// Create a filter for the query
+	filter := bson.M{
+		"metadata.name":    name,
+		"metadata.version": version,
 	}
+
+	// Find a document in the collection that matches the filter
+	result := repoCollection.FindOne(context.Background(), filter)
+
+	// Check if a document was found
+
+	return result.Err() == nil
+}
+
+func PackageDelete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+}
+
+func PackageRate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+}
+
+func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+}
+
+func PackageUpdate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+}
+
+func PackagesList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+}
+
+func RegistryReset(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
 }

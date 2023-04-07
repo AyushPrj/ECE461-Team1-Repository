@@ -6,21 +6,19 @@ import (
 	//"ECE461-Team1-Repository/metrics"
 	//"bufio"
 	"fmt"
-	//golog "log"
+	templog "log"
 	//"os"
 	//"regexp"
 	//"sort"
 	//"strings"
 
 	//rest api
-	"encoding/json"
+	// "encoding/json"
 	"net/http"
 
 	"ECE461-Team1-Repository/configs"
-	"ECE461-Team1-Repository/routes"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	sw "ECE461-Team1-Repository/routes"
 )
 
 type Link struct {
@@ -127,17 +125,17 @@ var links []Link
 type reposJson map[string]interface{}
 type arr_repos []map[string]interface{}
 
-func jsonOutput(c *gin.Context) {
-	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list 
+// func jsonOutput(c *gin.Context) {
+// 	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list 
 
-	for _, link := range links {
-		newjson := make(reposJson)
-		json.Unmarshal([]byte(link.ndjson), &newjson)
-		allrepos = append(allrepos, newjson)		
-	}
+// 	for _, link := range links {
+// 		newjson := make(reposJson)
+// 		json.Unmarshal([]byte(link.ndjson), &newjson)
+// 		allrepos = append(allrepos, newjson)		
+// 	}
 
-	c.IndentedJSON(http.StatusOK, allrepos)
-}
+// 	c.IndentedJSON(http.StatusOK, allrepos)
+// }
 
 func main() {
 	// args := os.Args[1:]
@@ -160,20 +158,11 @@ func main() {
 	// 	links = append(links, cli(each_repo))
 	// }
 
-	router := gin.Default()
-	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"POST", "PUT", "PATCH", "DELETE"},
-		AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
-	}))
+	
 
 	//run database
-	 configs.ConnectDB()
-
-	// router.Static("/assets", "./assets")
-	// router.LoadHTMLGlob("views/*")
-
-	routes.RepoRoute(router)
-
-	router.Run("localhost:5500")
+	configs.ConnectDB()
+	templog.Printf("Server started")
+	router := sw.NewRouter()
+	templog.Fatal(http.ListenAndServe(":8080", router))
 }

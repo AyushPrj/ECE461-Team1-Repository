@@ -3,13 +3,9 @@ const JSZip = require('jszip');
 
 function App() {
   const [response, setResponse] = useState(null);
-  const [inputValue, setInputValue] = useState('');
+  const [repoName, setRepoName] = useState('');
   const [repoId, setRepoId] = useState('');
   const [zipFile, setZipFile] = useState(null);
-
-  const handleInputChange = (event) => {
-    setInputValue(event.target.value);
-  };
 
   const handleZipFileChange = (event) => {
     setZipFile(event.target.files[0]);
@@ -87,7 +83,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userInput: inputValue }),
+        body: JSON.stringify({ }),
       });
       const json = await res.json();
       setResponse(json);
@@ -123,8 +119,8 @@ function App() {
       <h1>My Website</h1>
       <form>
         <label>
-          User Input:
-          <input type="text" value={inputValue} onChange={handleInputChange} />
+          Repo Name:
+          <input type="text" value={repoId} onChange={(event) => setRepoName(event.target.value)} />
         </label>
         <br />
         <label>
