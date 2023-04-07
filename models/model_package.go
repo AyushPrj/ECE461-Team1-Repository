@@ -13,6 +13,11 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type ModelPackage struct {
 	ID		 primitive.ObjectID `bson:"_id"`
-	Data     *PackageData     `json:"data" bson:"data"`
 	Metadata *PackageMetadata `json:"metadata" bson:"metadata"`
+	Data     *PackageData     `json:"data" bson:"data"`
+}
+
+type PkgResponse struct {
+	Metadata *PackageMetadata `json:"metadata" bson:"metadata"`
+	Data     *PackageData     `json:"data" bson:"data"`
 }

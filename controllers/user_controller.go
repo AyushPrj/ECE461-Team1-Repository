@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson" //add this
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -252,7 +253,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    http.StatusBadRequest,
-			Message: "Missing or invalid authentication token",
+			Message: " is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
 		})
 		return
 	}
@@ -305,31 +306,18 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	newMetadata.ID = modelPackage.ID.Hex()
 
-	fmt.Println(modelPackage.Metadata.Version)
-	// Check if the package already exists
 	if !packageExists(modelPackage.Metadata.Name, modelPackage.Metadata.Version) {
 
 		new_metrics := metrics.GetMetrics("https://github.com", 1, repoPath) //get metrics
-		type NDJSON struct {
-			Name                 string  `json:"URL"`
-			Rampup               float64 `json:"RAMP_UP_SCORE"`
-			Correctness          float64 `json:"CORRECTNESS_SCORE"`
-			Responsivemaintainer float64 `json:"RESPONSIVE_MAINTAINER_SCORE"`
-			Busfactor            float64 `json:"BUS_FACTOR_SCORE"`
-			Reviewcoverage       float64 `json:"REVIEW_COVERAGE_SCORE"`
-			Dependancypinning    float64 `json:"DEPENDENCY_PINNING_RATE"`
-			License              int     `json:"LICENSE_SCORE"`
-			Net                  float64 `json:"NET_SCORE"`
-		}
 
-		var ndjsonData NDJSON
+		var ndjsonData models.PackageRating
 
 		err := json.Unmarshal([]byte(new_metrics), &ndjsonData)
 		if err != nil {
 			return
 		}
 
-		if ndjsonData.Net > 0.5 {
+		if ndjsonData.NetScore > 0.5 {
 			//insert
 			if _, err := repoCollection.InsertOne(context.Background(), modelPackage); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -346,8 +334,12 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			modelPackage.Data.Content = ls
+			resp := &models.PkgResponse{
+				Metadata: modelPackage.Metadata,
+				Data:     modelPackage.Data,
+			}
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(modelPackage)
+			json.NewEncoder(w).Encode(resp)
 			return
 		} else {
 			json.NewEncoder(w).Encode(models.ModelError{
@@ -387,8 +379,60 @@ func PackageDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func PackageRate(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	//w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	authToken := r.Header.Get("X-Authorization")
+	if authToken == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	vars := mux.Vars(r)
+	resourceID := vars["id"]
+	objectId, err := primitive.ObjectIDFromHex(resourceID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	var result models.ModelPackage
+
+	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&result)
+	if err != nil{
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    404,
+			Message: "Package does not exist.",
+		})
+		return
+	}
+	fmt.Printf("%+v\n", result)
+
+
+	repoPath := strings.TrimPrefix(result.Data.URL, "https://github.com/")
+	username, repoName := path.Split(repoPath)
+	repoPath = strings.TrimSuffix(username+repoName, "/")
+	new_metrics := metrics.GetMetrics("https://github.com", 1, repoPath)
+
+	var ndjsondata models.PackageRating
+
+	err = json.Unmarshal([]byte(new_metrics), &ndjsondata)
+		if err != nil {
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "The package rating system choked on at least one of the metrics.",
+			})
+			return
+	}
+	
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ndjsondata)
 }
 
 func PackageRetrieve(w http.ResponseWriter, r *http.Request) {

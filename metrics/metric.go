@@ -136,22 +136,15 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 		repo = api.GetRepo(name)
 	}
 
-	fmt.Println("Good")
-
 	rampUp, numLines := getRampUpScore(repo)
-	fmt.Println("Good2")
 
 	correctness := getCorrectnessScore(repo)
-	fmt.Println("Good3")
 
 	busFactor := getBusFactor(repo.ContributorsURL)
-	fmt.Println("Good4")
 
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
-	fmt.Println("Good5")
 
 	license := getLicenseScore(repo)
-	fmt.Println("Good6")
 
 	//depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
 	depPinRate := 0.3
@@ -173,10 +166,15 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 	log.Printf(log.INFO, "Dependency Pinning Rate: %v", depPinRate)
 	log.Printf(log.INFO, "Code Review Coverage: %v", reviewCoverage)
 
-	ndjson := `{"URL":"` + name + `", "NET_SCORE":` + fmt.Sprintf("%.2f", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%.2f", rampUp) +
-		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) +
-		`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "DEPENDENCY_PINNING_RATE":` + fmt.Sprintf("%.2f", depPinRate) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
+	//ndjson := `{"URL":"` + name + `", "NET_SCORE":` + fmt.Sprintf("%.2f", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%.2f", rampUp) +
+	//	`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) +
+	//	`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "DEPENDENCY_PINNING_RATE":` + fmt.Sprintf("%.2f", depPinRate) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
 
+
+	ndjson := `{"NetScore":` + fmt.Sprintf("%.2f", netScore) + `, "RampUp":` + fmt.Sprintf("%.2f", rampUp) +
+		`, "Correctness":` + fmt.Sprintf("%.1f", correctness) + `, "BusFactor":` + fmt.Sprintf("%.2f", busFactor) + `, "ResponsiveMaintainer":` + fmt.Sprintf("%.2f", responsiveness) +
+		`, "LicenseScore":` + fmt.Sprintf("%d", license) + `, "GoodPinningPractice":` + fmt.Sprintf("%.2f", depPinRate) + `, "PullRequest":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
+	
 	log.Printf(log.DEBUG, ndjson)
 	fmt.Println(netScore)
 
