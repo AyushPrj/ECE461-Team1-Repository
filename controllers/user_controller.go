@@ -20,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson" //add this
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -166,6 +167,7 @@ type PackageRegExRequest struct {
 	RegEx string `json:"regex"`
 }
 
+
 func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 	authToken := r.Header.Get("X-Authorization")
 	if authToken == "" {
@@ -246,11 +248,13 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// done.. dont need auth?
 func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	// Get the authentication token from the request header
 	authToken := r.Header.Get("X-Authorization")
 	if authToken == "" {
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println("here1")
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    http.StatusBadRequest,
 			Message: " is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
@@ -263,6 +267,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	var packageData models.PackageData
 	err := json.NewDecoder(r.Body).Decode(&packageData)
 	if err != nil {
+		fmt.Println("here2")
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    400,
 			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
@@ -281,6 +286,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	largeString := packageData.Content
 	fileID, err := storeLargeString(contentCollection, largeString)
 	if err != nil {
+		fmt.Println("here3")
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    400,
 			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
@@ -292,6 +298,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	if e {
 		newMetadata.Version = ver
 	} else {
+		fmt.Println("here4")
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    400,
 			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
@@ -358,6 +365,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	// Generate a unique package ID and store the package in the database
 }
 
+// done
 func packageExists(name string, version string) bool { //other page?
 	// Create a filter for the query
 	filter := bson.M{
@@ -373,11 +381,79 @@ func packageExists(name string, version string) bool { //other page?
 	return result.Err() == nil
 }
 
+//done
 func PackageDelete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	vars := mux.Vars(r)
+	resourceID := vars["id"]
+	objectId, err := primitive.ObjectIDFromHex(resourceID)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	var temp models.ModelPackage
+
+	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&temp)
+	if err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    404,
+			Message: "Package does not exist.",
+		})
+		return
+	}
+
+	bucket, _ := gridfs.NewBucket(
+		contentCollection.Database(),
+		options.GridFSBucket().SetName("fs"),
+	)
+	id, err := primitive.ObjectIDFromHex(temp.Data.Content)
+	if err := bucket.Delete(id); err != nil {
+ 	  panic(err)
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while deleting the associated GridFS files and chunks.",
+		})
+		return
+	}
+
+	result, err := repoCollection.DeleteOne(context.Background(), bson.M{"_id": objectId})
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusNotFound,
+			Message: "Package does not exist.",
+		})
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(models.ModelError{
+		Code:    http.StatusOK,
+		Message: "Package is deleted.",
+	})
+
 }
 
+// done... dont need auth?
 func PackageRate(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	authToken := r.Header.Get("X-Authorization")
@@ -405,7 +481,7 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 	var result models.ModelPackage
 
 	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&result)
-	if err != nil{
+	if err != nil {
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    404,
 			Message: "Package does not exist.",
@@ -413,7 +489,6 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Printf("%+v\n", result)
-
 
 	repoPath := strings.TrimPrefix(result.Data.URL, "https://github.com/")
 	username, repoName := path.Split(repoPath)
@@ -423,21 +498,51 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 	var ndjsondata models.PackageRating
 
 	err = json.Unmarshal([]byte(new_metrics), &ndjsondata)
-		if err != nil {
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "The package rating system choked on at least one of the metrics.",
-			})
-			return
+	if err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    500,
+			Message: "The package rating system choked on at least one of the metrics.",
+		})
+		return
 	}
-	
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(ndjsondata)
 }
 
+// done
 func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	vars := mux.Vars(r)
+	resourceID := vars["id"]
+	objectId, err := primitive.ObjectIDFromHex(resourceID)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	var result models.ModelPackage
+
+	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&result)
+	if err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    404,
+			Message: "Package does not exist.",
+		})
+		return
+	}
+
+	ls, _ := readLargeString(contentCollection, result.Data.Content)
+
+	result.Data.Content = ls
+
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
 }
 
 func PackageUpdate(w http.ResponseWriter, r *http.Request) {
