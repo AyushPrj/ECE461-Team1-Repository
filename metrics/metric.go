@@ -21,16 +21,23 @@ func getResponsivenessScore(owner, name string) float32 {
 	}
 }
 
-// getLicenseScore checks if the output of GetLicenseFromREADME is blank, and assigns 0 or 1 accordingly
+/*
+getLicenseScore checks to see if license is in the README, if it is not, then check
+if there is a file containing a license
+*/
 func getLicenseScore(repo api.Repo) int {
 	readme_string := api.GetRawREADME(repo)
 	license_string := api.GetLicenseFromREADME(readme_string)
 
 	if license_string == "" {
-		return 0
+		return api.GetLicenseFromFile()
 	}
 	return 1
 }
+
+/*
+getCorrectnessScore calls api to check repo for correctness
+*/
 
 func getCorrectnessScore(repo api.Repo) float64 {
 	return api.CheckRepoForTest(repo)
@@ -136,13 +143,19 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 		repo = api.GetRepo(name)
 	}
 
+	fmt.Println("RAMPUP")
 	rampUp, numLines := getRampUpScore(repo)
+	fmt.Println("CORECTNESS")
 	correctness := getCorrectnessScore(repo)
+	fmt.Println("BUSFACTOR")
 	busFactor := getBusFactor(repo.ContributorsURL)
+	fmt.Println("RESPONSIVENESS")
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
+	fmt.Println("LICENSE")
 	license := getLicenseScore(repo)
-	// depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
-	depPinRate := float32(0.0);
+	fmt.Println("DEPPINRATE")
+	depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
+	fmt.Println("COVERAGE")
 	reviewCoverage := getReviewCoverage(repo, numLines)
 
 	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license

@@ -299,6 +299,19 @@ func GetRawREADME(repo Repo) string {
 	return string(responseData)
 }
 
+// Global var, list of recognized licenses
+var licenses = []string{
+	"MIT", "Apache", "BSD 3-Clause",
+	"BSD 2-Clause", "ISC", "BSD Zero Clause",
+	"Boost Software", "UPL", "Universal Permissive",
+	"JSON", "Simple Public", "Copyfree Open Innovation",
+	"Xerox", "Sendmail", "All-Permissive", "Artistic",
+	"Berkely Database", "Modified BSD", "CeCILL", "Cryptix General",
+	"Zope Public", "XFree86", "X11", "WxWidgets Library", "WTFPL",
+	"WebM", "Unlicense", "StandardMLofNJ", "Ruby", "SGI Free Software",
+	"Python", "Ruby", "Perl", "OpenLDAP", "Netscape Javascript", "NCSA",
+	"Mozilla Public", "Intel Open Source"}
+
 /*
 GetLicenseFromREADME takes in the raw contents of a README.md file in a string variable. The
 README is checked for one of many licenses compatible with the LGPLv2.1 license. If the function
@@ -308,19 +321,6 @@ finds a specific compatible license, it returns that license, otherwise it retur
 func GetLicenseFromREADME(readmeText string) string {
 
 	// parse readme for license, return specific license if found, return empty string if not found
-
-	licenses := []string{
-		"MIT", "Apache", "BSD 3-Clause",
-		"BSD 2-Clause", "ISC", "BSD Zero Clause",
-		"Boost Software", "UPL", "Universal Permissive",
-		"JSON", "Simple Public", "Copyfree Open Innovation",
-		"Xerox", "Sendmail", "All-Permissive", "Artistic",
-		"Berkely Database", "Modified BSD", "CeCILL", "Cryptix General",
-		"Zope Public", "XFree86", "X11", "WxWidgets Library", "WTFPL",
-		"WebM", "Unlicense", "StandardMLofNJ", "Ruby", "SGI Free Software",
-		"Python", "Ruby", "Perl", "OpenLDAP", "Netscape Javascript", "NCSA",
-		"Mozilla Public", "Intel Open Source"}
-
 	if strings.Contains(readmeText, "License") || strings.Contains(readmeText, "license") {
 
 		for _, license := range licenses {
@@ -336,7 +336,47 @@ func GetLicenseFromREADME(readmeText string) string {
 	}
 
 	return ""
+}
 
+/*
+GetLicenseFromFile
+*/
+
+func GetLicenseFromFile(owner, name string) int {
+
+	fileName := ""
+
+	// Get current working directory
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
+
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println(log.DEBUG, "Error navigating to main folder:", err)
+	}
+
+	// Go to repo folder
+	temp, _ := os.ReadDir(name)
+	for _, val := range temp {
+
+		currentFile := strings.ToLower(val.Name())
+		if (currentFile == "requirements.txt" || currentFile == "package.json") {
+			fileName = val.Name()
+		}
+	}
+
+	if fileName == "" { return 0 }
+
+	file, err := os.Open(name + "/" + fileName)
+    if err != nil {
+        log.Println(log.DEBUG, "Error opening file:", err)
+        return 0
+    }
+    defer file.Close()
+
+	return 0
 }
 
 /*
@@ -514,7 +554,7 @@ func GetPackageRequirements(owner, name string) float32 {
 
 		currentFile := strings.ToLower(val.Name())
 		if (currentFile == "requirements.txt" || currentFile == "package.json") {// Add more if more are found
-			fileName = val.Name() 
+			fileName = val.Name()
 		}
 	}
 

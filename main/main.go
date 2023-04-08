@@ -3,7 +3,7 @@ package main
 import (
 	"ECE461-Team1-Repository/api"
 	"ECE461-Team1-Repository/log"
-	//"ECE461-Team1-Repository/metrics"
+	"ECE461-Team1-Repository/metrics"
 	//"bufio"
 	"fmt"
 	//golog "log"
@@ -16,10 +16,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"ECE461-Team1-Repository/configs"
-	"ECE461-Team1-Repository/routes"
+	//"ECE461-Team1-Repository/configs"
+	//"ECE461-Team1-Repository/routes"
 
-	"github.com/gin-contrib/cors"
+	//"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -128,12 +128,12 @@ type reposJson map[string]interface{}
 type arr_repos []map[string]interface{}
 
 func jsonOutput(c *gin.Context) {
-	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list 
+	allrepos := make(arr_repos, 0) //necessary so that when you call the API again, it doesnt append the same stuff to the list
 
 	for _, link := range links {
 		newjson := make(reposJson)
 		json.Unmarshal([]byte(link.ndjson), &newjson)
-		allrepos = append(allrepos, newjson)		
+		allrepos = append(allrepos, newjson)
 	}
 
 	c.IndentedJSON(http.StatusOK, allrepos)
@@ -152,7 +152,7 @@ func main() {
 	// for scanner.Scan() {
 	// 	text = append(text, scanner.Text())
 	// }
-	
+
 	// //The method os.File.Close() is called on the os.File object to close the file
 	// file.Close()
 
@@ -160,20 +160,26 @@ func main() {
 	// 	links = append(links, cli(each_repo))
 	// }
 
-	router := gin.Default()
-	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"POST", "PUT", "PATCH", "DELETE"},
-		AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
-	}))
+// 		netscore, ndjson := metrics.GetMetrics(toRateURL, tmpSite, tmpName)
 
-	//run database
-	 configs.ConnectDB()
+	fmt.Println("STARTING METRIC")
+	metrics.GetMetrics("https://github.com/HorseAJ86/node-jquery", api.GITHUB, "HorseAJ86/node-jquery")
+	fmt.Println("DONE GETTING METRIC")
 
-	// router.Static("/assets", "./assets")
-	// router.LoadHTMLGlob("views/*")
+	// router := gin.Default()
+	// router.Use(cors.New(cors.Config{
+	// 	AllowOrigins: []string{"*"},
+	// 	AllowMethods: []string{"POST", "PUT", "PATCH", "DELETE"},
+	// 	AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
+	// }))
 
-	routes.RepoRoute(router)
+	// //run database
+	//  configs.ConnectDB()
 
-	router.Run("localhost:5500")
+	// // router.Static("/assets", "./assets")
+	// // router.LoadHTMLGlob("views/*")
+
+	// routes.RepoRoute(router)
+
+	// router.Run("localhost:5500")
 }
