@@ -14,6 +14,8 @@ func getBusFactor(url string) float32 {
 
 func getResponsivenessScore(owner, name string) float32 {
 	closed, total := api.GetIssuesCount(owner, name)
+	fmt.Println("CLOSED: ", closed)
+	fmt.Println("TOTAL: ", total)
 	if total != 0 {
 		return float32(closed) / float32(total)
 	} else {
@@ -30,7 +32,7 @@ func getLicenseScore(repo api.Repo) int {
 	license_string := api.GetLicenseFromREADME(readme_string)
 
 	if license_string == "" {
-		return api.GetLicenseFromFile()
+		return api.GetLicenseFromFile(repo.Owner.Login, repo.Name)
 	}
 	return 1
 }
@@ -119,11 +121,10 @@ getReviewCoverage returns lines added from pull requests divided by total lines.
 
 func getReviewCoverage(repo api.Repo, numLines int) float32 {
 	reviewLines := api.CountReviewedLines(repo)
-	if (reviewLines > numLines) {
-		log.Println(log.DEBUG, "ERROR: Lines reviewed > numlines")
-		return 1.0
+	if (reviewLines < numLines) {
+		return float32(reviewLines) / float32(numLines)
 	}
-	return float32(reviewLines) / float32(numLines)
+	return float32(numLines) / float32(reviewLines)
 }
 
 /*
@@ -143,19 +144,12 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 		repo = api.GetRepo(name)
 	}
 
-	fmt.Println("RAMPUP")
 	rampUp, numLines := getRampUpScore(repo)
-	fmt.Println("CORECTNESS")
 	correctness := getCorrectnessScore(repo)
-	fmt.Println("BUSFACTOR")
 	busFactor := getBusFactor(repo.ContributorsURL)
-	fmt.Println("RESPONSIVENESS")
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
-	fmt.Println("LICENSE")
 	license := getLicenseScore(repo)
-	fmt.Println("DEPPINRATE")
 	depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
-	fmt.Println("COVERAGE")
 	reviewCoverage := getReviewCoverage(repo, numLines)
 
 	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license

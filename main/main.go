@@ -162,9 +162,7 @@ func main() {
 
 // 		netscore, ndjson := metrics.GetMetrics(toRateURL, tmpSite, tmpName)
 
-	fmt.Println("STARTING METRIC")
 	metrics.GetMetrics("https://github.com/HorseAJ86/node-jquery", api.GITHUB, "HorseAJ86/node-jquery")
-	fmt.Println("DONE GETTING METRIC")
 
 	// router := gin.Default()
 	// router.Use(cors.New(cors.Config{
