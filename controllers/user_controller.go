@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	//"fmt"
 	"regexp"
@@ -26,6 +27,7 @@ import (
 
 var repoCollection *mongo.Collection = configs.GetCollection(configs.DB, "repos")
 var contentCollection *mongo.Collection = configs.GetCollection(configs.DB, "largeStrings")
+var historyCollection *mongo.Collection = configs.GetCollection(configs.DB, "history")
 
 func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -166,7 +168,6 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 type PackageRegExRequest struct {
 	RegEx string `json:"regex"`
 }
-
 
 func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 	authToken := r.Header.Get("X-Authorization")
@@ -347,6 +348,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 			}
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(resp)
+			AddPackageHistory(*resp.Metadata, "CREATE")
 			return
 		} else {
 			json.NewEncoder(w).Encode(models.ModelError{
@@ -381,7 +383,7 @@ func packageExists(name string, version string) bool { //other page?
 	return result.Err() == nil
 }
 
-//done
+// done
 func PackageDelete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	vars := mux.Vars(r)
@@ -414,7 +416,7 @@ func PackageDelete(w http.ResponseWriter, r *http.Request) {
 	)
 	id, err := primitive.ObjectIDFromHex(temp.Data.Content)
 	if err := bucket.Delete(id); err != nil {
- 	  panic(err)
+		panic(err)
 	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -508,6 +510,7 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(ndjsondata)
+	AddPackageHistory(*result.Metadata, "RATE")
 }
 
 // done
@@ -543,11 +546,81 @@ func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
+	AddPackageHistory(*result.Metadata, "DOWNLOAD")
 }
 
+// done
 func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	vars := mux.Vars(r)
+	resourceID := vars["id"]
+	objectId, err := primitive.ObjectIDFromHex(resourceID)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	var result models.ModelPackage
+
+	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&result)
+	if err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    404,
+			Message: "Package does not exist.",
+		})
+		return
+	}
+
+	// Decode the request body into a ModelPackage struct
+	var updatedPackage models.ModelPackage
+	err = json.NewDecoder(r.Body).Decode(&updatedPackage)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	// Update the fields of the result with the values from the request body
+	result.Data.JSProgram = updatedPackage.Data.JSProgram
+	result.Data.URL = updatedPackage.Data.URL
+	result.Data.Content = updatedPackage.Data.Content
+	// Add other fields as needed
+
+	// Update the package in the MongoDB collection
+	updateResult, err := repoCollection.UpdateOne(context.Background(), bson.M{"_id": objectId}, bson.M{"$set": result})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while updating the package.",
+		})
+		return
+	}
+
+	if updateResult.ModifiedCount == 0 { //could mean that nothing would have gotten updated
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(models.ModelError{
+		Code:    http.StatusOK,
+		Message: "Version is updated.",
+	})
+
+	AddPackageHistory(*updatedPackage.Metadata, "UPDATE")
 }
 
 func PackagesList(w http.ResponseWriter, r *http.Request) {
@@ -558,4 +631,25 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 func RegistryReset(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
+}
+
+type PackageHistory struct {
+	ID              primitive.ObjectID     `bson:"_id,omitempty"`
+	Date            string                 `bson:"date"`
+	PackageMetadata models.PackageMetadata `bson:"packageMetadata"`
+	Action          string                 `bson:"action"`
+}
+
+func AddPackageHistory(metadata models.PackageMetadata, action string) error {
+	now := time.Now().UTC()
+	formattedDate := now.Format("2006-01-02T15:04:05Z")
+
+	history := PackageHistory{
+		Date:            formattedDate,
+		PackageMetadata: metadata,
+		Action:          action,
+	}
+
+	_, err := historyCollection.InsertOne(context.Background(), history)
+	return err
 }
