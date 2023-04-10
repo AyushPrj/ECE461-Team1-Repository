@@ -29,6 +29,9 @@ import (
 var repoCollection *mongo.Collection = configs.GetCollection(configs.DB, "repos")
 var contentCollection *mongo.Collection = configs.GetCollection(configs.DB, "largeStrings")
 var historyCollection *mongo.Collection = configs.GetCollection(configs.DB, "history")
+var fschunksCollection *mongo.Collection = configs.GetCollection(configs.DB, "fs.chunks")
+var fsfilesCollection *mongo.Collection = configs.GetCollection(configs.DB, "fs.files")
+
 
 func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -674,8 +677,29 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Check user ? when to return 401
 func RegistryReset(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	authToken := r.Header.Get("X-Authorization")
+	if authToken == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+	fmt.Print(("here2"))
+	// filter := bson.M{};
+	// repoCollection.DeleteMany(context.Background(), filter)
+	// contentCollection.DeleteMany(context.Background(), filter)
+	// historyCollection.DeleteMany(context.Background(), filter)
+	repoCollection.Drop(context.Background())
+	contentCollection.Drop(context.Background())
+	historyCollection.Drop(context.Background())
+	fsfilesCollection.Drop(context.Background())
+	fschunksCollection.Drop(context.Background())
+
 	w.WriteHeader(http.StatusOK)
 }
 
