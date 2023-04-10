@@ -34,7 +34,27 @@ var fsfilesCollection *mongo.Collection = configs.GetCollection(configs.DB, "fs.
 
 func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
+
+	var requestBody models.AuthenticationRequest
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	// Have not implemented
+
+	// w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNotImplemented)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	json.NewEncoder(w).Encode(models.ModelError{
+		Code:    501,
+		Message: "This system does not support authentication.",
+	})
 }
 
 type Response struct {
@@ -740,11 +760,7 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	fmt.Print(("here2"))
-	// filter := bson.M{};
-	// repoCollection.DeleteMany(context.Background(), filter)
-	// contentCollection.DeleteMany(context.Background(), filter)
-	// historyCollection.DeleteMany(context.Background(), filter)
+	
 	repoCollection.Drop(context.Background())
 	contentCollection.Drop(context.Background())
 	historyCollection.Drop(context.Background())
