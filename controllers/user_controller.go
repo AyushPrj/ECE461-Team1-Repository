@@ -7,10 +7,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	//"fmt"
-	"regexp"
+	// "regexp"
 	"strings"
 
 	//"io"
@@ -39,215 +40,259 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+//done
 func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
-	authToken := r.Header.Get("X-Authorization")
-	if authToken == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(Response{
-			Status:  "error",
-			Message: "Missing X-Authorization header",
-		})
-		return
-	}
-
-	// Implement your authentication and authorization logic based on authToken
-
-	packageName := r.URL.Query().Get("name")
+	vars := mux.Vars(r)
+	packageName := vars["name"]
 	if packageName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(Response{
-			Status:  "error",
-			Message: "There is missing field(s) in the PackageName/AuthenticationToken\\ or it is formed improperly, or the AuthenticationToken is invalid.",
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
 		})
 		return
 	}
 
-	filter := bson.M{"name": packageName}
-	result, err := repoCollection.DeleteMany(context.Background(), filter)
+	filter := bson.M{"metadata.name": packageName}
+
+	cur, err := repoCollection.Find(context.Background(), filter)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(Response{
-			Status:  "error",
-			Message: "There is missing field(s) in the PackageName/AuthenticationToken\\ or it is formed improperly, or the AuthenticationToken is invalid.",
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
 		})
 		return
 	}
 
-	if result.DeletedCount == 0 {
+	var packageIDs []string
+	for cur.Next(context.Background()) {
+		var pkg models.PkgResponse
+		err := cur.Decode(&pkg)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+		packageIDs = append(packageIDs, pkg.Data.Content)
+	}
+
+	// Check if any packages were found
+	if len(packageIDs) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(Response{
-			Status:  "error",
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    404,
 			Message: "Package does not exist.",
 		})
 		return
 	}
 
-	response := Response{
-		Status:  "success",
+	bucket, _ := gridfs.NewBucket(
+		contentCollection.Database(),
+		options.GridFSBucket().SetName("fs"),
+	)
+
+	for _, id := range packageIDs {
+		fmt.Println(id)
+		id, err := primitive.ObjectIDFromHex(id)
+		if err := bucket.Delete(id); err != nil {
+			panic(err)
+		}
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    http.StatusInternalServerError,
+				Message: "An error occurred while deleting the associated GridFS files and chunks.",
+			})
+			return
+		}
+
+	}
+
+	_, err = repoCollection.DeleteMany(context.Background(), filter)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	response := models.ModelError{
+		Code:    200,
 		Message: "Package is deleted.",
 	}
+	historyfilter := bson.M{"packageMetadata.name": packageName}
+	_, err = historyCollection.DeleteMany(context.Background(), historyfilter)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	json.NewEncoder(w).Encode(response)
 }
 
+// done... how do i get a 400 error?
 func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
-	authToken := r.Header.Get("X-Authorization")
-	if authToken == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Missing X-Authorization header",
-		})
-		return
-	}
-
-	// Implement your authentication and authorization logic based on authToken
-
-	packageName := r.URL.Query().Get("name")
-	if packageName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Missing package name in the path",
-		})
-		return
-	}
-
-	filter := bson.M{"name": packageName}
-	findOptions := options.Find()
-	var packageHistory []models.PackageHistoryEntry
-
-	cursor, err := repoCollection.Find(context.Background(), filter, findOptions)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Error retrieving package history",
-		})
-		return
-	}
-	defer cursor.Close(context.Background())
-
-	if err := cursor.All(context.Background(), &packageHistory); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Error decoding package history",
-		})
-		return
-	}
-
-	if len(packageHistory) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Package not found",
-		})
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
+	vars := mux.Vars(r)
+	resourceName := vars["name"]
 
-	err = json.NewEncoder(w).Encode(packageHistory)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if resourceName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
 	}
+
+	packageFilter := bson.M{"metadata.name": resourceName}
+	packageCount, err := repoCollection.CountDocuments(context.Background(), packageFilter)
+
+	if err != nil || packageCount == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusNotFound,
+			Message: "No such package.",
+		})
+		return
+	}
+
+	filter := bson.M{"packageMetadata.name": resourceName}
+	findOptions := options.Find().SetSort(bson.D{{Key: "date", Value: -1}})
+	cur, err := historyCollection.Find(context.Background(), filter, findOptions)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    0,
+			Message: "unexpected error",
+		})
+		return
+	}
+
+	var results []PackageHistory
+
+	// Decode the results into a slice of PackageHistory
+	for cur.Next(context.Background()) {
+		var result PackageHistory
+		err := cur.Decode(&result)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    0,
+				Message: "unexpected error",
+			})
+			return
+		}
+		results = append(results, result)
+	}
+
+	// Return the list of PackageHistory objects as JSON
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(results)
+
 }
 
 type PackageRegExRequest struct {
 	RegEx string `json:"regex"`
 }
 
+//done
 func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
-	authToken := r.Header.Get("X-Authorization")
-	if authToken == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Missing X-Authorization header",
-		})
-		return
-	}
-
-	// Implement your authentication and authorization logic based on authToken
-
-	var packageRegExRequest PackageRegExRequest
-	err := json.NewDecoder(r.Body).Decode(&packageRegExRequest)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid JSON in request body",
-		})
-		return
-	}
-
-	findOptions := options.Find()
-	var packages []models.PackageMetadata
-	cursor, err := repoCollection.Find(context.Background(), bson.D{}, findOptions)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Error retrieving packages",
-		})
-		return
-	}
-	defer cursor.Close(context.Background())
-
-	if err := cursor.All(context.Background(), &packages); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Error decoding packages",
-		})
-		return
-	}
-
-	regex, err := regexp.Compile(packageRegExRequest.RegEx)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid regular expression",
-		})
-		return
-	}
-
-	matchingPackages := []models.PackageMetadata{}
-	for _, pkg := range packages {
-		if regex.MatchString(pkg.Name) && regex.MatchString(pkg.Version) {
-			matchingPackages = append(matchingPackages, pkg)
-		}
-	}
-
-	if len(matchingPackages) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "No packages found for the provided regex",
-		})
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(matchingPackages)
+
+	// Read the request body and store it as a regex pattern
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
 	}
+
+	regexPattern := string(body)
+	if regexPattern == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	// Find packages based on regex pattern
+	filter := bson.M{"metadata.name": bson.M{"$regex": primitive.Regex{Pattern: regexPattern, Options: ""}}}
+	cur, err := repoCollection.Find(context.Background(), filter)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    0,
+			Message: "Unexpected error",
+		})
+		return
+	}
+
+	type PackageVersionName struct {
+		Name    string `json:"Name"`
+		Version string `json:"Version"`
+	}
+
+	var results []PackageVersionName
+
+	// Decode the results into a slice of PackageVersionName
+	for cur.Next(context.Background()) {
+		var pkg models.PkgResponse
+		err := cur.Decode(&pkg)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    0,
+				Message: "Unexpected error",
+			})
+			return
+		}
+		results = append(results, PackageVersionName{
+			Name:    pkg.Metadata.Name,
+			Version: pkg.Metadata.Version,
+		})
+	}
+
+	if len(results) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusNotFound,
+			Message: "No package found under this regex.",
+		})
+		return
+	}
+
+	// Return the list of PackageVersionName objects as JSON
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(results)
 }
+
 
 // done.. dont need auth?
 func PackageCreate(w http.ResponseWriter, r *http.Request) {
@@ -414,6 +459,7 @@ func PackageDelete(w http.ResponseWriter, r *http.Request) {
 		contentCollection.Database(),
 		options.GridFSBucket().SetName("fs"),
 	)
+
 	id, err := primitive.ObjectIDFromHex(temp.Data.Content)
 	if err := bucket.Delete(id); err != nil {
 		panic(err)
@@ -634,7 +680,6 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 }
 
 type PackageHistory struct {
-	ID              primitive.ObjectID     `bson:"_id,omitempty"`
 	Date            string                 `bson:"date"`
 	PackageMetadata models.PackageMetadata `bson:"packageMetadata"`
 	Action          string                 `bson:"action"`

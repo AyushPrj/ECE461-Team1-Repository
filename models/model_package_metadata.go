@@ -16,5 +16,5 @@ type PackageMetadata struct {
 	// Package version
 	Version string `json:"Version"`
 
-	ID string `json:"Id"`
+	ID string `json:"ID"`
 }
