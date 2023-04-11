@@ -297,16 +297,16 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 // done.. dont need auth?
 func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	// Get the authentication token from the request header
-	authToken := r.Header.Get("X-Authorization")
-	if authToken == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println("here1")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: " is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
-		return
-	}
+	// authToken := r.Header.Get("X-Authorization")
+	// if authToken == "" {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	fmt.Println("here1")
+	// 	json.NewEncoder(w).Encode(models.ModelError{
+	// 		Code:    http.StatusBadRequest,
+	// 		Message: " is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+	// 	})
+	// 	return
+	// }
 
 	// Decode the request body into a ModelPackage struct
 	//var modelPackage models.ModelPackage
@@ -332,7 +332,6 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	largeString := packageData.Content
 	fileID, err := storeLargeString(contentCollection, largeString)
 	if err != nil {
-		fmt.Println("here3")
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    400,
 			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
@@ -625,6 +624,7 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	// Decode the request body into a ModelPackage struct
 	var updatedPackage models.ModelPackage
 	err = json.NewDecoder(r.Body).Decode(&updatedPackage)
+	fmt.Println(updatedPackage.Data.JSProgram)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ModelError{
@@ -634,11 +634,37 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//if(result.Metadata.Name != updatedPackage.Metadata.Name || result.Metadata.Version != updatedPackage.Metadata.Version){
+	if(result.Metadata.Name != updatedPackage.Metadata.Name){
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	
+
+	largeString := updatedPackage.Data.Content
+	fileID, err := storeLargeString(contentCollection, largeString)
+	if err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
 	// Update the fields of the result with the values from the request body
 	result.Data.JSProgram = updatedPackage.Data.JSProgram
 	result.Data.URL = updatedPackage.Data.URL
-	result.Data.Content = updatedPackage.Data.Content
+
+	oldContentID := result.Data.Content
+	result.Data.Content = fileID.Hex()
 	// Add other fields as needed
+
+
 
 	// Update the package in the MongoDB collection
 	updateResult, err := repoCollection.UpdateOne(context.Background(), bson.M{"_id": objectId}, bson.M{"$set": result})
@@ -658,6 +684,16 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
 		})
 		return
+	}
+
+	bucket, _ := gridfs.NewBucket(
+		contentCollection.Database(),
+		options.GridFSBucket().SetName("fs"),
+	)
+
+	id, err := primitive.ObjectIDFromHex(oldContentID)
+	if err := bucket.Delete(id); err != nil {
+		panic(err)
 	}
 
 	w.WriteHeader(http.StatusOK)

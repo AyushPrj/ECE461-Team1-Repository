@@ -3,10 +3,12 @@ package main
 import (
 	"ECE461-Team1-Repository/api"
 	"ECE461-Team1-Repository/log"
+
 	//"ECE461-Team1-Repository/metrics"
 	//"bufio"
 	"fmt"
 	templog "log"
+
 	//"os"
 	//"regexp"
 	//"sort"
@@ -15,6 +17,9 @@ import (
 	//rest api
 	// "encoding/json"
 	"net/http"
+
+	"github.com/gorilla/handlers"
+	//"github.com/gorilla/mux"
 
 	"ECE461-Team1-Repository/configs"
 
@@ -164,5 +169,11 @@ func main() {
 	configs.ConnectDB()
 	templog.Printf("Server started")
 	router := sw.NewRouter()
-	templog.Fatal(http.ListenAndServe(":8080", router))
+
+	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "access-control-allow-origin", "access-control-allow-headers"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"POST", "PUT", "PATCH", "DELETE"})
+
+	
+	templog.Fatal(http.ListenAndServe(":8080", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
 }
