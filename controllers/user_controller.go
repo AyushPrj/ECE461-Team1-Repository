@@ -38,7 +38,7 @@ func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	var requestBody models.AuthenticationRequest
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
-	if err != nil {
+	if err != nil || requestBody == (models.AuthenticationRequest{}) {
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    400,
 			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
@@ -47,8 +47,8 @@ func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Have not implemented
+	// resource - https://mattermost.com/blog/how-to-build-an-authentication-microservice-in-golang-from-scratch/
 
-	// w.WriteHeader(http.StatusOK)
 	w.WriteHeader(http.StatusNotImplemented)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	json.NewEncoder(w).Encode(models.ModelError{
@@ -690,7 +690,6 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	AddPackageHistory(*updatedPackage.Metadata, "UPDATE")
 }
 
-
 // Not done the filter for the database might have to be parsed
 func PackagesList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -719,8 +718,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		"metadata.version": search[0].Version,
 	}
 
-
-	cur, err := repoCollection.Find(context.Background(), filter);
+	cur, err := repoCollection.Find(context.Background(), filter)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ModelError{
@@ -760,7 +758,7 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	repoCollection.Drop(context.Background())
 	contentCollection.Drop(context.Background())
 	historyCollection.Drop(context.Background())
