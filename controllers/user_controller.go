@@ -36,9 +36,11 @@ func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	var requestBody models.AuthenticationRequest
-
+	var defaultUser models.User
+	defaultUser.IsAdmin = true
+	defaultUser.Name = "ece30861defaultadminuser"
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
-	if err != nil || requestBody == (models.AuthenticationRequest{}) {
+	if err != nil || requestBody == (models.AuthenticationRequest{}) || *requestBody.User != defaultUser {
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    400,
 			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",

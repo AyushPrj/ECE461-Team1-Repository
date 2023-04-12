@@ -24,5 +24,5 @@ func main() {
 	methodsOk := handlers.AllowedMethods([]string{"POST", "PUT", "PATCH", "DELETE"})
 
 	
-	templog.Fatal(http.ListenAndServe(":8080", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
+	templog.Fatal(http.ListenAndServe("0.0.0.0:8080", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
 }
