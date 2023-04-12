@@ -677,6 +677,7 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 
 	// Update the fields of the result with the values from the request body
 	result.Data.JSProgram = updatedPackage.Data.JSProgram
+	fmt.Println(result.Data.JSProgram)
 	result.Data.URL = updatedPackage.Data.URL
 
 	oldContentID := result.Data.Content
