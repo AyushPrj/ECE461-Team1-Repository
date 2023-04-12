@@ -2,7 +2,10 @@ module ECE461-Team1-Repository
 
 go 1.18
 
-require go.mongodb.org/mongo-driver v1.11.2
+require (
+	github.com/gorilla/handlers v1.5.1
+	go.mongodb.org/mongo-driver v1.11.2
+)
 
 require (
 	github.com/google/go-cmp v0.5.5 // indirect
@@ -12,11 +15,7 @@ require (
 	github.com/stretchr/testify v1.8.1 // indirect
 )
 
-require (
-	github.com/felixge/httpsnoop v1.0.1 // indirect
-	github.com/gorilla/handlers v1.5.1 // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
-)
+require github.com/felixge/httpsnoop v1.0.1 // indirect
 
 require (
 	github.com/golang/snappy v0.0.1 // indirect
