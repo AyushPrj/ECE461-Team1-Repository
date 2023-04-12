@@ -29,10 +29,32 @@ import (
 var repoCollection *mongo.Collection = configs.GetCollection(configs.DB, "repos")
 var contentCollection *mongo.Collection = configs.GetCollection(configs.DB, "largeStrings")
 var historyCollection *mongo.Collection = configs.GetCollection(configs.DB, "history")
+var fschunksCollection *mongo.Collection = configs.GetCollection(configs.DB, "fs.chunks")
+var fsfilesCollection *mongo.Collection = configs.GetCollection(configs.DB, "fs.files")
 
 func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
+
+	var requestBody models.AuthenticationRequest
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil || requestBody == (models.AuthenticationRequest{}) {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	// Have not implemented
+	// resource - https://mattermost.com/blog/how-to-build-an-authentication-microservice-in-golang-from-scratch/
+
+	w.WriteHeader(http.StatusNotImplemented)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	json.NewEncoder(w).Encode(models.ModelError{
+		Code:    501,
+		Message: "This system does not support authentication.",
+	})
 }
 
 type Response struct {
@@ -700,13 +722,81 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	AddPackageHistory(*updatedPackage.Metadata, "UPDATE")
 }
 
+// Not done the filter for the database might have to be parsed
 func PackagesList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	type requestBody struct {
+		Version string `json:"Version"`
+		Name    string `json:"Name"`
+	}
+
+	var search []requestBody
+	var results []requestBody
+
+	// Decode the results into a slice of PackageVersionName
+	err := json.NewDecoder(r.Body).Decode(&search)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	filter := bson.M{
+		"metadata.name":    search[0].Name,
+		"metadata.version": search[0].Version,
+	}
+
+	cur, err := repoCollection.Find(context.Background(), filter)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    0,
+			Message: "Unexpected error",
+		})
+		return
+	}
+	for cur.Next(context.Background()) {
+		var pkg requestBody
+		err := cur.Decode(&pkg)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+		results = append(results, pkg)
+	}
+
+	json.NewEncoder(w).Encode(results)
 	w.WriteHeader(http.StatusOK)
 }
 
+// Check user ? when to return 401
 func RegistryReset(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	authToken := r.Header.Get("X-Authorization")
+	if authToken == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	repoCollection.Drop(context.Background())
+	contentCollection.Drop(context.Background())
+	historyCollection.Drop(context.Background())
+	fsfilesCollection.Drop(context.Background())
+	fschunksCollection.Drop(context.Background())
+
 	w.WriteHeader(http.StatusOK)
 }
 
