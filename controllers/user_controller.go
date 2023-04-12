@@ -40,7 +40,7 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-//done
+// done
 func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	packageName := vars["name"]
@@ -217,7 +217,7 @@ type PackageRegExRequest struct {
 	RegEx string `json:"regex"`
 }
 
-//done
+// done
 func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -292,7 +292,6 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(results)
 }
-
 
 // done.. dont need auth?
 func PackageCreate(w http.ResponseWriter, r *http.Request) {
@@ -635,7 +634,7 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//if(result.Metadata.Name != updatedPackage.Metadata.Name || result.Metadata.Version != updatedPackage.Metadata.Version){
-	if(result.Metadata.Name != updatedPackage.Metadata.Name){
+	if result.Metadata.Name != updatedPackage.Metadata.Name {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    http.StatusBadRequest,
@@ -643,8 +642,6 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	
 
 	largeString := updatedPackage.Data.Content
 	fileID, err := storeLargeString(contentCollection, largeString)
@@ -663,8 +660,6 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	oldContentID := result.Data.Content
 	result.Data.Content = fileID.Hex()
 	// Add other fields as needed
-
-
 
 	// Update the package in the MongoDB collection
 	updateResult, err := repoCollection.UpdateOne(context.Background(), bson.M{"_id": objectId}, bson.M{"$set": result})
