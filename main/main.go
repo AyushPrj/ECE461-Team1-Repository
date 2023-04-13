@@ -1,27 +1,34 @@
 package main
 
 import (
-	templog "log"
+    templog "log"
+    "net/http"
 
-	"net/http"
-
-	"github.com/gorilla/handlers"
-	//"github.com/gorilla/mux"
-
-	"ECE461-Team1-Repository/configs"
-
-	sw "ECE461-Team1-Repository/routes"
+    "ECE461-Team1-Repository/configs"
+    sw "ECE461-Team1-Repository/routes"
 )
 
 func main() {
-	//run database
-	configs.ConnectDB()
-	templog.Printf("Server started")
-	router := sw.NewRouter()
+    //run database
+    configs.ConnectDB()
+    templog.Printf("Server started")
+    router := sw.NewRouter()
 
-	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "access-control-allow-origin", "access-control-allow-headers", "Access-Control-Allow-Origin", "*"})
-	originsOk := handlers.AllowedOrigins([]string{"*"})
-	methodsOk := handlers.AllowedMethods([]string{"POST", "PUT", "PATCH", "DELETE", "GET"})
-
-	templog.Fatal(http.ListenAndServe("0.0.0.0:8080", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
+    templog.Fatal(http.ListenAndServe("0.0.0.0:8080", CORSHandler(router)))
 }
+
+
+func CORSHandler(h http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Access-Control-Allow-Origin", "*")
+        w.Header().Set("Access-Control-Allow-Methods", "POST, PUT, PATCH, DELETE, GET, OPTIONS")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, access-control-allow-origin, access-control-allow-headers, X-Authorization")
+        w.Header().Set("Access-Control-Allow-Credentials", "true")
+        if r.Method == "OPTIONS" {
+            w.WriteHeader(http.StatusOK)
+            return
+        }
+        h.ServeHTTP(w, r)
+    })
+}
+
