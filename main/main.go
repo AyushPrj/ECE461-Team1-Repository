@@ -19,10 +19,9 @@ func main() {
 	templog.Printf("Server started")
 	router := sw.NewRouter()
 
-	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "access-control-allow-origin", "access-control-allow-headers"})
+	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "access-control-allow-origin", "access-control-allow-headers", "Access-Control-Allow-Origin", "*"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
-	methodsOk := handlers.AllowedMethods([]string{"POST", "PUT", "PATCH", "DELETE"})
+	methodsOk := handlers.AllowedMethods([]string{"POST", "PUT", "PATCH", "DELETE", "GET"})
 
-	
 	templog.Fatal(http.ListenAndServe("0.0.0.0:8080", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
 }

@@ -53,7 +53,7 @@ const UpdatePackage = () => {
                 setValue('url', url);
             }
 
-            setValue('jsprogram', 'arbitraryUpdate2');
+            setValue('jsprogram', 'arbitraryUpdate3');
             setFileLoading(false); // Add this line
         };
 

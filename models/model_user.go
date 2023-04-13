@@ -11,7 +11,7 @@ package swagger
 
 type User struct {
 
-	Name string `json:"name"`
+	Name string `json:"name" bson:"name"`
 	// Is this user an admin?
-	IsAdmin bool `json:"isAdmin"`
+	IsAdmin bool  `json:"isAdmin" bson:"isadmin"`
 }

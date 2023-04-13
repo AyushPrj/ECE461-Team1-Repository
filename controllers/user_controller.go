@@ -190,7 +190,11 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	packageFilter := bson.M{"metadata.name": resourceName}
+	packageFilter2 := bson.D{} //"packagemetadata.name": "axios"
+
 	packageCount, err := repoCollection.CountDocuments(context.Background(), packageFilter)
+	numFound, err := historyCollection.CountDocuments(context.Background(), packageFilter2)
+	fmt.Println(numFound)
 
 	if err != nil || packageCount == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -201,7 +205,7 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filter := bson.M{"packageMetadata.name": resourceName}
+	filter := bson.M{"packagemetadata.name": resourceName}
 	findOptions := options.Find().SetSort(bson.D{{Key: "date", Value: -1}})
 	cur, err := historyCollection.Find(context.Background(), filter, findOptions)
 
@@ -214,11 +218,11 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var results []PackageHistory
+	var results []models.PackageHistoryEntry
 
 	// Decode the results into a slice of PackageHistory
 	for cur.Next(context.Background()) {
-		var result PackageHistory
+		var result models.PackageHistoryEntry
 		err := cur.Decode(&result)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -803,19 +807,20 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-type PackageHistory struct {
-	Date            string                 `bson:"date"`
-	PackageMetadata models.PackageMetadata `bson:"packageMetadata"`
-	Action          string                 `bson:"action"`
-}
-
 func AddPackageHistory(metadata models.PackageMetadata, action string) error {
 	now := time.Now().UTC()
 	formattedDate := now.Format("2006-01-02T15:04:05Z")
 
-	history := PackageHistory{
-		Date:            formattedDate,
-		PackageMetadata: metadata,
+
+	hardcodedUser := &models.User{
+		Name:    "ece30861defaultadminuser",
+		IsAdmin: true,
+	}
+
+	history := models.PackageHistoryEntry{
+		User:           hardcodedUser,
+		Date:           formattedDate,
+		PackageMetadata: &metadata,
 		Action:          action,
 	}
 

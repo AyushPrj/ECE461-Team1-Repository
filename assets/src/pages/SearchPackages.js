@@ -59,7 +59,7 @@ const SearchPackages = () => {
                 <>
                     Name: {result.PackageMetadata.Name}, Version: {result.PackageMetadata.Version}
                     <br />
-                    Action: {result.Action}, User: ece30861defaultadminuser, isAdmin: true
+                    Action: {result.Action}, User: {result.User.name}
                 </>
             );
         } else if (searchType === 'regex') {
