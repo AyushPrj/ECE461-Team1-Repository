@@ -60,6 +60,19 @@ func TestDepPinRate(t *testing.T) {
 	}
 }
 
+func TestGetPackageRequirements(t *testing.T) {
+	// Testing package.json
+	tst := GetPackageRequirements("expressjs", "express")
+	if tst > 1 {
+		t.Fatal("Error getting pin rate for package.json!")
+	}
+	// Testing requirements.txt
+	tst = GetPackageRequirements("binder-examples", "requirements")
+	if tst > 1 {
+		t.Fatal("Error getting pin rate for requirements.txt!")
+	}
+}
+
 func TestGetReadmeUrl(t *testing.T) {
 	tst := Repo{FullName: "expressjs/express"}
 	if getReadmeURL(tst) != "https://raw.githubusercontent.com/expressjs/express/master/Readme.md" {
@@ -99,6 +112,10 @@ func TestCloning(t *testing.T) {
 
 	if CheckRepoForTest(tst) != 1.0 {
 		t.Fatal("Checking: Error cloning repository!")
+	}
+
+	if GetLicenseFromFile("expressjs", "express") != 1 {
+		t.Fatal("License: Error cloning repository!")
 	}
 
 	if CountReviewedLines(tst) < 0 {

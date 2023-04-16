@@ -263,7 +263,6 @@ func GetIssuesCount(owner, name string) (int, int) {
 
 	var respObj Issue
 	json.Unmarshal(respData, &respObj)
-	log.Println(log.DEBUG, "ISSUES: ", string(respData))
 
 	return respObj.Data.Repository.Closed.TotalCount, respObj.Data.Repository.Total.TotalCount
 }
@@ -567,8 +566,6 @@ func GetDepPinRate(owner, name string) float32 {
 		}
 	}
 
-	log.Println(log.DEBUG, "PINNED: ", pinnedReq)
-	log.Println(log.DEBUG, "TOT: ", totDep)
 	return float32(pinnedReq) / float32(totDep)
 }
 
@@ -645,7 +642,6 @@ func GetPackageRequirements(owner, name string) float32 {
 			return 0
 		}
 
-		log.Println(log.DEBUG, "UNMARSHALED FILE")
 		// Check for dependencies and determine if they are pinned
 		dependencies, ok := packageJSON["dependencies"].(map[string]interface{})
 		if ok {
@@ -744,6 +740,7 @@ func CountReviewedLines(repo Repo) int {
 		// ELSE NOTHING - COMMIT IS NOT A PULL REQUEST
 	}
 
+	// NEEDS TO BE LAST TEST TO RUN ON CLONED REPO, TODO: MAKE THIS INTO A FUNCTION
 	os.Chdir(dir)
 	rem := exec.Command("rm", "-r", repo.Name)
 	err = rem.Run()

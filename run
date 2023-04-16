@@ -2,10 +2,11 @@
 
 function help() {
   echo '------------- ./run Commands ----------------------'
-  echo 'Usage: ./run [install|build|test]'
+  echo 'Usage: ./run [install|build|test|run]'
   echo 'install  - Installs any dependencies in userland'
   echo 'build    - Completes any compilation needed'
   echo 'test     - Runs go.tests'
+  echo 'run      - Runs ./main/main arg'
   echo 'ADD MORE EXPLANATION HERE'
   echo '---------------------------------------------------'
 }
@@ -13,12 +14,7 @@ function help() {
 function install {
     go mod tidy
     go mod download
-    # DONOT DO THIS YET
-    # if ! command -v gcloud &> /dev/null; then
-    #     curl https://sdk.cloud.google.com | bash
-    # else
-    #     gcloud components update
-    # fi
+
 }
 
 function build {
@@ -30,7 +26,7 @@ function test {
     CNT1=$((cd api; go test -cover -v) | grep -c PASS)
     CNT2=$((cd log; go test -cover -v) | grep -c PASS)
     CNT3=$((cd metrics; go test -cover -v) | grep -c PASS)
-    CNT=$((CNT1 + CNT2 + CNT3 + 1))
+    CNT=$((CNT1 + CNT2 + CNT3))
     echo "${CNT}/26 test cases passed."
 }
 
