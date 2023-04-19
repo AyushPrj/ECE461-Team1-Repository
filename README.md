@@ -2,7 +2,7 @@
 This repository contains the source code for the ECE461 Team1 project.
 
 ## Project Members (Part 2)
-- Nahush Anand
+- Nahush Walvekar
 - Alonso Ernesto Cestti
 - Nandini Krishna
 - Bartosz Stoppel

@@ -1,0 +1,22 @@
+steps:
+#get env from gcp
+# - name: 'gcr.io/cloud-builders/gcloud'
+#   entrypoint: 'bash'
+#   args:
+#       - '-c'
+#       - |
+#         export MY_SECRET=$(gcloud secrets versions access latest --secret=mongodb_uri --format='get(payload.data)' | base64 -d)
+
+#docker build
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', 
+        '--tag', 
+        'us-central1-docker.pkg.dev/webservice-381819/cloud-run-source-deploy/ece461-team7/hello:3d9e82dcc2ec3fb18d77f329d33546b36aaaf8b7',
+        '--build-arg', 
+        'MONGOURI=$_MONGOURI',  
+        '.']
+  # args: ['build', '--tag', 'us-central1-docker.pkg.dev/webservice-381819/cloud-run-source-deploy/ece461-team7/hello:3d9e82dcc2ec3fb18d77f329d33546b36aaaf8b7', '.']
+
+#docker push
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/webservice-381819/cloud-run-source-deploy/ece461-team7/hello:3d9e82dcc2ec3fb18d77f329d33546b36aaaf8b7']

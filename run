@@ -38,11 +38,8 @@ function run {
     (./main/main $1)
 }
 
-export $(cat .env | xargs)
+export $(cat .env | grep -v ^# | grep -v ^alias | xargs)
 case "$1" in
-    # "export")
-    #     $(export $(cat .env | xargs))
-    #     ;;
     "install")
         install
         ;;
