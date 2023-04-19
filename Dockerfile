@@ -25,10 +25,3 @@ EXPOSE 3000
 
 #run main
 CMD HOME=/root go run main/main.go & cd assets && npm install && npm start
-
-# docker run --env-file=.env alpine env
-# docker build --tag webservice --build-arg 
-# docker run --publish 5500:5500 webservice
-# docker run --publish 0.0.0.0:3000:3000 webservice
-# docker run --publish 0.0.0.0:3000:3000 --publish 0.0.0.0:8080:8080 webservice
-# docker run --publish 35.209.87.90:3000:3000 webservice

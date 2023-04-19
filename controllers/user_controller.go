@@ -741,8 +741,13 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 	offsetNum, _ := strconv.Atoi(offset)
 	offsetNum = (offsetNum - 1) * 10
 
+	type packageResponse struct {
+		Version string `json:"Version"`
+		Name string `json:"Name"`
+		ID string `json:"ID"`
+	};
 	var search []models.PackageQuery
-	var results []models.PackageQuery
+	var results []packageResponse
 
 	// Decode the results into a slice of PackageVersionName
 	err := json.NewDecoder(r.Body).Decode(&search)
@@ -852,7 +857,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for cur.Next(context.Background()) {
-		var pkg models.PackageQuery
+		var pkg packageResponse
 		var myMap map[string]interface{}
 		err := cur.Decode(&myMap)
 		if err != nil {
@@ -867,6 +872,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 
 		pkg.Version = stringmap.Exact
 		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
+		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
 		if pkg.Name == "" || pkg.Version == "" {
 			fmt.Print("here")
 
@@ -883,7 +889,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 	}
 	for cur1.Next(context.Background()) {
 
-		var pkg models.PackageQuery
+		var pkg packageResponse
 		var myMap map[string]interface{}
 		err := cur1.Decode(&myMap)
 		if err != nil {
@@ -899,6 +905,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 
 		pkg.Version = stringmap.BoundedRange[0] + "-" + stringmap.BoundedRange[1]
 		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
+		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
 		if pkg.Name == "" {
 			fmt.Print("here1")
 
@@ -915,7 +922,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for cur2.Next(context.Background()) {
-		var pkg models.PackageQuery
+		var pkg packageResponse
 		var myMap map[string]interface{}
 		err := cur2.Decode(&myMap)
 		if err != nil {
@@ -930,6 +937,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 
 		pkg.Version = "^" + stringmap.Caret
 		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
+		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
 		if pkg.Name == "" || pkg.Version == "" {
 			fmt.Print("here2")
 
@@ -944,7 +952,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		results = append(results, pkg)
 	}
 	for cur3.Next(context.Background()) {
-		var pkg models.PackageQuery
+		var pkg packageResponse
 		var myMap map[string]interface{}
 		err := cur3.Decode(&myMap)
 		if err != nil {
@@ -959,6 +967,7 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 
 		pkg.Version = "~" + stringmap.Tilde
 		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
+		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
 		if pkg.Name == "" || pkg.Version == "" {
 			fmt.Print("here3")
 
