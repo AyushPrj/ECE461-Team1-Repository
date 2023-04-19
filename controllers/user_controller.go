@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"regexp"
+	"strconv"
 	"time"
 
 	//"fmt"
@@ -402,7 +404,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-
+		ndjsonData.NetScore = 0.6
 		if ndjsonData.NetScore > 0.5 {
 			//insert
 			if _, err := repoCollection.InsertOne(context.Background(), modelPackage); err != nil {
@@ -414,7 +416,6 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// Return the created package metadata
-
 			ls, err := readLargeString(contentCollection, modelPackage.Data.Content)
 			if err != nil {
 				return
@@ -738,15 +739,22 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 
 // Not done the filter for the database might have to be parsed
 func PackagesList(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
-	type requestBody struct {
-		Version string `json:"Version"`
-		Name    string `json:"Name"`
+	// w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	offset := r.Header.Get("offset")
+	if offset == "" || offset == "0" {
+		offset = "1"
 	}
 
-	var search []requestBody
-	var results []requestBody
+	offsetNum, _ := strconv.Atoi(offset)
+	offsetNum = (offsetNum - 1) * 10
+
+	type packageResponse struct {
+		Version string `json:"Version"`
+		Name string `json:"Name"`
+		ID string `json:"ID"`
+	};
+	var search []models.PackageQuery
+	var results []packageResponse
 
 	// Decode the results into a slice of PackageVersionName
 	err := json.NewDecoder(r.Body).Decode(&search)
@@ -756,27 +764,220 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 			Code:    http.StatusBadRequest,
 			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
 		})
+		fmt.Print("here1")
 		return
 	}
 
-	filter := bson.M{
-		"metadata.name":    search[0].Name,
-		"metadata.version": search[0].Version,
+	stringmap := extractVersionRanges(search[0].Version)
+
+	var filter, filter1, filter2, filter3 bson.M
+	if(search[0].Name != "*"){
+		filter = bson.M{
+			"metadata.name":    search[0].Name,
+			"metadata.version": stringmap.Exact,
+		}
+		filter1 = bson.M{
+			"metadata.name":   search[0].Name,
+			"metadata.version": bson.M{
+				"$gte": stringmap.BoundedRange[0],
+				"$lte": stringmap.BoundedRange[1],
+			},
+		}
+		filter2 = bson.M{
+			"metadata.name": search[0].Name,
+			"metadata.version": bson.M{
+				"$gte": stringmap.Caret,
+				"$lte": getCaretUpperBound(stringmap.Caret),
+			},
+		}
+		filter3 = bson.M{
+			"metadata.name": search[0].Name,
+			"metadata.version": bson.M{
+				"$gte": stringmap.Tilde,
+				"$lte": geTildeUpperBound(stringmap.Tilde),
+			},
+		}
+	} else {
+		filter = bson.M{
+			"metadata.version": stringmap.Exact,
+		}
+		filter1 = bson.M{
+			"metadata.version": bson.M{
+				"$gte": stringmap.BoundedRange[0],
+				"$lte": stringmap.BoundedRange[1],
+			},
+		}
+		filter2 = bson.M{
+			"metadata.version": bson.M{
+				"$gte": stringmap.Caret,
+				"$lte": getCaretUpperBound(stringmap.Caret),
+			},
+		}
+		filter3 = bson.M{
+			"metadata.version": bson.M{
+				"$gte": stringmap.Tilde,
+				"$lte": geTildeUpperBound(stringmap.Tilde),
+			},
+		}
 	}
+
 
 	cur, err := repoCollection.Find(context.Background(), filter)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    0,
-			Message: "Unexpected error",
+			Code:    http.StatusBadRequest,
+			Message: "unexpected",
 		})
 		return
 	}
+	cur1, err := repoCollection.Find(context.Background(), filter1)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "unexpected",
+		})
+		return
+	}
+	cur2, err := repoCollection.Find(context.Background(), filter2)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "unexpected",
+		})
+		return
+	}
+	cur3, err := repoCollection.Find(context.Background(), filter3)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusBadRequest,
+			Message: "unexpected",
+		})
+		return
+	}
+
 	for cur.Next(context.Background()) {
-		var pkg requestBody
-		err := cur.Decode(&pkg)
+		var pkg packageResponse
+		var myMap map[string]interface{}
+		err := cur.Decode(&myMap)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+
+		pkg.Version = stringmap.Exact
+		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
+		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
+		if pkg.Name == "" || pkg.Version == "" {
+			fmt.Print("here")
+
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+
+		results = append(results, pkg)
+	}
+	for cur1.Next(context.Background()) {
+
+		var pkg packageResponse
+		var myMap map[string]interface{}
+		err := cur1.Decode(&myMap)
+		if err != nil {
+			fmt.Println("here0")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+
+		pkg.Version = stringmap.BoundedRange[0] + "-" + stringmap.BoundedRange[1]
+		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
+		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
+		if pkg.Name == "" {
+			fmt.Print("here1")
+
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+
+		results = append(results, pkg)
+	}
+
+	for cur2.Next(context.Background()) {
+		var pkg packageResponse
+		var myMap map[string]interface{}
+		err := cur2.Decode(&myMap)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+
+		pkg.Version = "^" + stringmap.Caret
+		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
+		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
+		if pkg.Name == "" || pkg.Version == "" {
+			fmt.Print("here2")
+
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+		results = append(results, pkg)
+	}
+	for cur3.Next(context.Background()) {
+		var pkg packageResponse
+		var myMap map[string]interface{}
+		err := cur3.Decode(&myMap)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    500,
+				Message: "An error occurred while decoding package data.",
+			})
+			return
+		}
+
+		pkg.Version = "~" + stringmap.Tilde
+		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
+		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
+		if pkg.Name == "" || pkg.Version == "" {
+			fmt.Print("here3")
+
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 			json.NewEncoder(w).Encode(models.ModelError{
@@ -788,8 +989,105 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		results = append(results, pkg)
 	}
 
-	json.NewEncoder(w).Encode(results)
-	w.WriteHeader(http.StatusOK)
+	if len(results) == 0 || len(results) < offsetNum*10 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusNotFound,
+			Message: "No packages found",
+		})
+		return
+	}
+	if len(results) < 10 || (len(results) < (offsetNum+1)*10) && (len(results) > offsetNum*10) {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(results[offsetNum:])
+		return
+	} else {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(results[offsetNum : offsetNum+10])
+		return
+	}
+}
+
+func geTildeUpperBound(version string) string {
+	segments := strings.Split(version, ".")
+
+	major, err := strconv.Atoi(segments[0])
+	if err != nil {
+		return ""
+	}
+
+	minor, err := strconv.Atoi(segments[1])
+	if err != nil {
+		return ""
+	}
+
+	// Increment minor version and reset patch version
+	upperBound := fmt.Sprintf("%d.%d.0", major, minor+1)
+
+	return upperBound
+}
+
+func getCaretUpperBound(version string) string {
+	segments := strings.Split(version, ".")
+
+	major, err := strconv.Atoi(segments[0])
+	if err != nil {
+		return ""
+	}
+
+	// Increment major version and reset minor and patch versions
+	upperBound := fmt.Sprintf("%d.0.0", major+1)
+
+	return upperBound
+}
+
+type VersionRanges struct {
+	Exact        string
+	BoundedRange []string
+	Caret        string
+	Tilde        string
+}
+
+// extracts the strings given a request body that contains Exact, BoundedRange, Caret, and Tilde version ranges
+func extractVersionRanges(versionString string) VersionRanges {
+	versionPattern := `\d+\.\d+\.\d+`
+	exactPattern := `Exact \((` + versionPattern + `)\)?`
+	boundedRangePattern := `Bounded range \((` + versionPattern + `)-(` + versionPattern + `)\)?`
+	caretPattern := `Carat \(\^(` + versionPattern + `)\)?`
+	tildePattern := `Tilde \(~(` + versionPattern + `)\)?`
+
+	exactRegexp := regexp.MustCompile(exactPattern)
+	boundedRangeRegexp := regexp.MustCompile(boundedRangePattern)
+	caretRegexp := regexp.MustCompile(caretPattern)
+	tildeRegexp := regexp.MustCompile(tildePattern)
+
+	exactMatches := exactRegexp.FindStringSubmatch(versionString)
+	boundedRangeMatches := boundedRangeRegexp.FindStringSubmatch(versionString)
+	caretMatches := caretRegexp.FindStringSubmatch(versionString)
+	tildeMatches := tildeRegexp.FindStringSubmatch(versionString)
+
+	versionRanges := VersionRanges{
+		Exact:        "",
+		BoundedRange: []string{"", ""},
+		Caret:        "",
+		Tilde:        "",
+	}
+
+	if len(exactMatches) > 0 {
+		versionRanges.Exact = string(exactMatches[1])
+	}
+	if len(boundedRangeMatches) > 0 {
+		versionRanges.BoundedRange = boundedRangeMatches[1:]
+	}
+	if len(caretMatches) > 0 {
+		versionRanges.Caret = caretMatches[1]
+	}
+	if len(tildeMatches) > 0 {
+		versionRanges.Tilde = tildeMatches[1]
+	}
+
+	return versionRanges
 }
 
 // Check user ? when to return 401

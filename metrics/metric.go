@@ -125,6 +125,7 @@ GetMetrics calculates rating for the input repo
 
 func GetMetrics(baseURL string, siteType int, name string) (string) {
 	var repo api.Repo
+	// fmt.Printf("net score \n")
 
 	if siteType == api.NPM {
 		giturl := api.GetGithubURL(name)
@@ -137,7 +138,8 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 	}
 
 	rampUp, numLines := getRampUpScore(repo)
-
+	// fmt.Printf("net score 2\n")
+	
 	correctness := getCorrectnessScore(repo)
 
 	busFactor := getBusFactor(repo.ContributorsURL)

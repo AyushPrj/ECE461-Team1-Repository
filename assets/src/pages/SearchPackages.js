@@ -29,10 +29,10 @@ const SearchPackages = () => {
             let response;
             if (searchType === 'name') {
                 response = await fetch(
-                    `http://localhost:8080/package/byName/${encodeURIComponent(search)}`
+                    `http://0.0.0.0:8080/package/byName/${encodeURIComponent(search)}`
                 );
             } else {
-                const response = await fetch('http://localhost:8080/package/byRegEx', {
+                response = await fetch('http://0.0.0.0:8080/package/byRegEx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
