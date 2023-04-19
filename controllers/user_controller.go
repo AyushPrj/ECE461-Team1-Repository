@@ -242,7 +242,7 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 }
 
 type PackageRegExRequest struct {
-	RegEx string `json:"regex"`
+	RegEx string `json:"RegEx"`
 }
 
 // done
@@ -260,7 +260,14 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	regexPattern := string(body)
+	var inputBody PackageRegExRequest
+	if err := json.Unmarshal(body, &inputBody); err != nil {
+		return
+	}
+
+	regexPattern := inputBody.RegEx
+	fmt.Println(regexPattern)
+
 	if regexPattern == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ModelError{
@@ -811,15 +818,14 @@ func AddPackageHistory(metadata models.PackageMetadata, action string) error {
 	now := time.Now().UTC()
 	formattedDate := now.Format("2006-01-02T15:04:05Z")
 
-
 	hardcodedUser := &models.User{
 		Name:    "ece30861defaultadminuser",
 		IsAdmin: true,
 	}
 
 	history := models.PackageHistoryEntry{
-		User:           hardcodedUser,
-		Date:           formattedDate,
+		User:            hardcodedUser,
+		Date:            formattedDate,
 		PackageMetadata: &metadata,
 		Action:          action,
 	}

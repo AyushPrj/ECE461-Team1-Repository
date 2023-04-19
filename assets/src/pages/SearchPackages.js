@@ -32,12 +32,14 @@ const SearchPackages = () => {
                     `http://localhost:8080/package/byName/${encodeURIComponent(search)}`
                 );
             } else {
-                response = await fetch('http://localhost:8080/package/byRegEx', {
+                const response = await fetch('http://localhost:8080/package/byRegEx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: search,
+                    body: JSON.stringify({
+                        "RegEx": `"${search}"`
+                    }),
                 });
             }
 
