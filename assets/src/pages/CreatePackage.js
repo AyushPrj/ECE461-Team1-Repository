@@ -72,7 +72,7 @@ const CreatePackage = () => {
         console.log(requestData);
 
         try {
-            const response = await fetch('http://localhost:8080/package', {
+            const response = await fetch('http://0.0.0.0:8080/package', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
