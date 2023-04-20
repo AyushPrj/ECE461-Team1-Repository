@@ -131,6 +131,7 @@ GetMetrics calculates rating for the input repo
 
 func GetMetrics(baseURL string, siteType int, name string) (string) {
 	var repo api.Repo
+	// fmt.Printf("net score \n")
 
 	if siteType == api.NPM {
 		giturl := api.GetGithubURL(name)
@@ -142,11 +143,17 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 	}
 
 	rampUp, numLines := getRampUpScore(repo)
+	
 	correctness := getCorrectnessScore(repo)
+
 	busFactor := getBusFactor(repo.ContributorsURL)
+
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
+
 	license := getLicenseScore(repo)
+  
 	depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
+
 	reviewCoverage := getReviewCoverage(repo, numLines)
 
 	// delete the cloned repo
@@ -169,6 +176,7 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 		- License: 100%
 	*/
 
+
 	// Log (info)
 	log.Printf(log.INFO, "Name: %v", name)
 	log.Printf(log.INFO, "Net Score: %v", netScore)
@@ -180,10 +188,15 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 	log.Printf(log.INFO, "Dependency Pinning Rate: %v", depPinRate)
 	log.Printf(log.INFO, "Code Review Coverage: %v", reviewCoverage)
 
-	ndjson := `{"URL":"` + name + `", "NET_SCORE":` + fmt.Sprintf("%.2f", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%.2f", rampUp) +
-		`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) +
-		`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "DEPENDENCY_PINNING_RATE":` + fmt.Sprintf("%.2f", depPinRate) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
+	//ndjson := `{"URL":"` + name + `", "NET_SCORE":` + fmt.Sprintf("%.2f", netScore) + `, "RAMP_UP_SCORE":` + fmt.Sprintf("%.2f", rampUp) +
+	//	`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) +
+	//	`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "DEPENDENCY_PINNING_RATE":` + fmt.Sprintf("%.2f", depPinRate) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
 
+
+	ndjson := `{"NetScore":` + fmt.Sprintf("%.2f", netScore) + `, "RampUp":` + fmt.Sprintf("%.2f", rampUp) +
+		`, "Correctness":` + fmt.Sprintf("%.1f", correctness) + `, "BusFactor":` + fmt.Sprintf("%.2f", busFactor) + `, "ResponsiveMaintainer":` + fmt.Sprintf("%.2f", responsiveness) +
+		`, "LicenseScore":` + fmt.Sprintf("%d", license) + `, "GoodPinningPractice":` + fmt.Sprintf("%.2f", depPinRate) + `, "PullRequest":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
+	
 	log.Printf(log.DEBUG, ndjson)
 	fmt.Println(netScore)
 
