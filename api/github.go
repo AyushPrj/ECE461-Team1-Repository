@@ -740,16 +740,34 @@ func CountReviewedLines(repo Repo) int {
 		// ELSE NOTHING - COMMIT IS NOT A PULL REQUEST
 	}
 
-	// NEEDS TO BE LAST TEST TO RUN ON CLONED REPO, TODO: MAKE THIS INTO A FUNCTION
 	os.Chdir(dir)
-	rem := exec.Command("rm", "-r", repo.Name)
+	if totLinesReviewed > 0 { return totLinesReviewed }
+	return -totLinesReviewed
+}
+
+/*
+DeleteClonedRepo deletes the cloned repo from the local machine.
+*/
+
+func DeleteClonedRepo(repo Repo) {
+	// Get current working directory
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
+	log.Println(log.DEBUG, "Current directory:", dir)
+
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println("Error navigating to main folder:", err)
+	}
+
+	// Remove repo folder
+	rem := exec.Command("rm", "-rf", repo.Name)
 	err = rem.Run()
 
 	if err != nil {
 		log.Println(log.DEBUG, err)
 	}
 	os.RemoveAll(repo.Name)
-
-	if totLinesReviewed > 0 { return totLinesReviewed }
-	return -totLinesReviewed
 }

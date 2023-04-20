@@ -3,7 +3,7 @@ package main
 import (
 	"ECE461-Team1-Repository/api"
 	"ECE461-Team1-Repository/log"
-	"ECE461-Team1-Repository/metrics"
+	//"ECE461-Team1-Repository/metrics"
 	//"bufio"
 	"fmt"
 	//golog "log"
@@ -16,10 +16,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	//"ECE461-Team1-Repository/configs"
-	//"ECE461-Team1-Repository/routes"
+	"ECE461-Team1-Repository/configs"
+	"ECE461-Team1-Repository/routes"
 
-	//"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -162,22 +162,22 @@ func main() {
 
 // 		netscore, ndjson := metrics.GetMetrics(toRateURL, tmpSite, tmpName)
 
-	metrics.GetMetrics("https://github.com/HorseAJ86/node-jquery", api.GITHUB, "HorseAJ86/node-jquery")
+	// metrics.GetMetrics("https://github.com/HorseAJ86/node-jquery", api.GITHUB, "HorseAJ86/node-jquery")
 
-	// router := gin.Default()
-	// router.Use(cors.New(cors.Config{
-	// 	AllowOrigins: []string{"*"},
-	// 	AllowMethods: []string{"POST", "PUT", "PATCH", "DELETE"},
-	// 	AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
-	// }))
+	router := gin.Default()
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"POST", "PUT", "PATCH", "DELETE"},
+		AllowHeaders: []string{"Content-Type,access-control-allow-origin, access-control-allow-headers"},
+	}))
 
-	// //run database
-	//  configs.ConnectDB()
+	//run database
+	 configs.ConnectDB()
 
-	// // router.Static("/assets", "./assets")
-	// // router.LoadHTMLGlob("views/*")
+	// router.Static("/assets", "./assets")
+	// router.LoadHTMLGlob("views/*")
 
-	// routes.RepoRoute(router)
+	routes.RepoRoute(router)
 
-	// router.Run("localhost:5500")
+	router.Run("localhost:5500")
 }

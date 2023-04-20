@@ -14,8 +14,6 @@ func getBusFactor(url string) float32 {
 
 func getResponsivenessScore(owner, name string) float32 {
 	closed, total := api.GetIssuesCount(owner, name)
-	fmt.Println("CLOSED: ", closed)
-	fmt.Println("TOTAL: ", total)
 	if total != 0 {
 		return float32(closed) / float32(total)
 	} else {
@@ -136,7 +134,6 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 
 	if siteType == api.NPM {
 		giturl := api.GetGithubURL(name)
-		// parse the github url
 		gitLinkMatch := regexp.MustCompile(".*github.com/(.*).git")
 		githubURL := gitLinkMatch.FindStringSubmatch(giturl)[1]
 		repo = api.GetRepo(githubURL)
@@ -152,10 +149,25 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 	depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
 	reviewCoverage := getReviewCoverage(repo, numLines)
 
+	// delete the cloned repo
+	api.DeleteClonedRepo(repo)
+
 	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license
 	//netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
 	// NEW FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .2 * responsiveness + .1 * depPinRate + .2 * reviewCoverage) * license
 	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.1*depPinRate + 0.1*reviewCoverage) * float32(license)
+	/*
+	NEW FORMULA SUMMARY:
+		- Ramp-up time: 10%
+		- Correctness: 10%
+		- Bus Factor: 30%
+		- Responsiveness: 30%
+		- Dependency Pinning Rate: 10%
+		- Code Review Coverage: 10%
+
+		All or nothing for license: (if license is 0, then the entire score is 0)
+		- License: 100%
+	*/
 
 	// Log (info)
 	log.Printf(log.INFO, "Name: %v", name)

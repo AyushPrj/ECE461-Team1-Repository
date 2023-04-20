@@ -1,6 +1,7 @@
 package api
 
 import (
+	"os"
 	"testing"
 )
 
@@ -120,5 +121,12 @@ func TestCloning(t *testing.T) {
 
 	if CountReviewedLines(tst) < 0 {
 		t.Fatal("Counting: Error cloning repository!")
+	}
+
+	DeleteClonedRepo(tst)
+	// Check if repo is deleted
+	_, err := os.Stat(tst.Name)
+	if err == nil {
+		t.Fatal("Error deleting repository!")
 	}
 }
