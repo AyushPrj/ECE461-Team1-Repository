@@ -24,4 +24,4 @@ EXPOSE 8080
 EXPOSE 3000
 
 #run main
-CMD HOME=/root go run main/main.go & cd assets && npm install && npm start
+CMD HOME=/root go run main/main.go 
