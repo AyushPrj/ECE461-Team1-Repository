@@ -1277,36 +1277,36 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := repoCollection.Drop(context.Background()); err != nil{
+	if err := repoCollection.Drop(context.Background()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    http.StatusInternalServerError,
 			Message: "An error occurred while dropping the repo collection.",
 		})
 	}
-	
-	if err := contentCollection.Drop(context.Background()); err != nil{
+
+	if err := contentCollection.Drop(context.Background()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    http.StatusInternalServerError,
 			Message: "An error occurred while dropping the content collection.",
 		})
 	}
-	if err := historyCollection.Drop(context.Background()); err != nil{
+	if err := historyCollection.Drop(context.Background()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    http.StatusInternalServerError,
 			Message: "An error occurred while dropping the history collection.",
 		})
 	}
-	if err := fsfilesCollection.Drop(context.Background()); err != nil{
+	if err := fsfilesCollection.Drop(context.Background()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    http.StatusInternalServerError,
 			Message: "An error occurred while dropping the fs.files collection.",
 		})
 	}
-	if err := fschunksCollection.Drop(context.Background()); err != nil{
+	if err := fschunksCollection.Drop(context.Background()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    http.StatusInternalServerError,

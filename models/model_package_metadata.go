@@ -11,7 +11,6 @@ package swagger
 
 // The \"Name\" and \"Version\" are used as a unique identifier pair when uploading a package.  The \"ID\" is used as an internal identifier for interacting with existing packages.
 type PackageMetadata struct {
-
 	Name string `json:"Name"`
 	// Package version
 	Version string `json:"Version"`
