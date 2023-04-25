@@ -17,11 +17,11 @@ ENV MONGOURI $MONGOURI
 
 ENV DANGEROUSLY_DISABLE_HOST_CHECK=true
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y nodejs npm   
-RUN npm install
+# RUN apt-get update && apt-get upgrade -y && apt-get install -y nodejs npm   
+# RUN npm install
 
 EXPOSE 8080
-EXPOSE 3000
+# EXPOSE 3000
 
 #run main
 CMD HOME=/root go run main/main.go 
