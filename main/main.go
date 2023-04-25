@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-    //run database
+    // run database
     configs.ConnectDB()
     templog.Printf("Server started")
     router := sw.NewRouter()
@@ -22,7 +22,6 @@ func main() {
     templog.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router)))
     // templog.Fatal(http.ListenAndServe("0.0.0.0:8080", CORSHandler(router)))
 }
-
 
 func CORSHandler(h http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

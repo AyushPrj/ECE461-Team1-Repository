@@ -198,6 +198,14 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 	packageFilter2 := bson.D{} //"packagemetadata.name": "axios"
 
 	packageCount, err := repoCollection.CountDocuments(context.Background(), packageFilter)
+	if err != nil || packageCount == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusNotFound,
+			Message: "No such package.",
+		})
+		return
+	}
 	numFound, err := historyCollection.CountDocuments(context.Background(), packageFilter2)
 	fmt.Println(numFound)
 
@@ -353,7 +361,7 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 
 	cur, err = repoCollection.Find(context.Background(), secondFilter)
 	if err != nil {
-		fmt.Println("Error occurred while querying: %v", err)
+		fmt.Printf("Error occurred while querying: %v\n", err)
 		// Handle the error accordingly
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ModelError{
@@ -564,9 +572,16 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 				Metadata: modelPackage.Metadata,
 				Data:     modelPackage.Data,
 			}
+			if err := AddPackageHistory(*resp.Metadata, "CREATE"); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(models.ModelError{
+					Code:    http.StatusInternalServerError,
+					Message: "Failed to create package",
+				})
+				return
+			}
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(resp)
-			AddPackageHistory(*resp.Metadata, "CREATE")
 			return
 		} else {
 			json.NewEncoder(w).Encode(models.ModelError{
@@ -727,9 +742,15 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := AddPackageHistory(*result.Metadata, "RATE"); err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    500,
+			Message: "The package rating system choked on at least one of the metrics.",
+		})
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(ndjsondata)
-	AddPackageHistory(*result.Metadata, "RATE")
 }
 
 // done
@@ -763,9 +784,15 @@ func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
 
 	result.Data.Content = ls
 
+	if err := AddPackageHistory(*result.Metadata, "DOWNLOAD"); err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    500,
+			Message: "The package rating system choked on at least one of the metrics.",
+		})
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
-	AddPackageHistory(*result.Metadata, "DOWNLOAD")
 }
 
 // done
@@ -863,17 +890,26 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	)
 
 	id, err := primitive.ObjectIDFromHex(oldContentID)
+	if err != nil {
+		panic(err)
+	}
 	if err := bucket.Delete(id); err != nil {
 		panic(err)
 	}
 
+	if err := AddPackageHistory(*updatedPackage.Metadata, "UPDATE"); err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    500,
+			Message: "The package rating system choked on at least one of the metrics.",
+		})
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(models.ModelError{
 		Code:    http.StatusOK,
 		Message: "Version is updated.",
 	})
 
-	AddPackageHistory(*updatedPackage.Metadata, "UPDATE")
 }
 
 // Not done the filter for the database might have to be parsed
@@ -1241,11 +1277,42 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoCollection.Drop(context.Background())
-	contentCollection.Drop(context.Background())
-	historyCollection.Drop(context.Background())
-	fsfilesCollection.Drop(context.Background())
-	fschunksCollection.Drop(context.Background())
+	if err := repoCollection.Drop(context.Background()); err != nil{
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the repo collection.",
+		})
+	}
+	
+	if err := contentCollection.Drop(context.Background()); err != nil{
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the content collection.",
+		})
+	}
+	if err := historyCollection.Drop(context.Background()); err != nil{
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the history collection.",
+		})
+	}
+	if err := fsfilesCollection.Drop(context.Background()); err != nil{
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the fs.files collection.",
+		})
+	}
+	if err := fschunksCollection.Drop(context.Background()); err != nil{
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the fs.chunks collection.",
+		})
+	}
 
 	w.WriteHeader(http.StatusOK)
 }

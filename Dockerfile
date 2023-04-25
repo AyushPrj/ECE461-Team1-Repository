@@ -9,7 +9,8 @@ COPY . ./
 RUN go mod tidy && go mod download
 
 #build
-RUN cd main; go build -o main main.go
+WORKDIR /main/
+RUN go build -o main main.go
 
 #set env vars
 ARG MONGOURI
@@ -24,5 +25,5 @@ EXPOSE 8080
 
 #run main
 # CMD HOME=/root go run main/main.go 
-CMD ./main/main
+CMD ["./main"]
 
