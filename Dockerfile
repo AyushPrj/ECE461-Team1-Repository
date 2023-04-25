@@ -4,17 +4,16 @@ FROM golang:1.18
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+#copy files
+COPY . ./
 RUN go mod tidy && go mod download
 
-COPY . ./
+#build
+RUN cd main; go build -o main main.go
 
-
-#run install
+#set env vars
 ARG MONGOURI
 ENV MONGOURI $MONGOURI
-
 ENV DANGEROUSLY_DISABLE_HOST_CHECK=true
 
 # RUN apt-get update && apt-get upgrade -y && apt-get install -y nodejs npm   
@@ -24,4 +23,6 @@ EXPOSE 8080
 # EXPOSE 3000
 
 #run main
-CMD HOME=/root go run main/main.go 
+# CMD HOME=/root go run main/main.go 
+CMD ./main/main
+

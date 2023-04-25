@@ -1,11 +1,13 @@
 package main
 
 import (
-    templog "log"
-    "net/http"
+	"fmt"
+	templog "log"
+	"net/http"
+	"os"
 
-    "ECE461-Team1-Repository/configs"
-    sw "ECE461-Team1-Repository/routes"
+	"ECE461-Team1-Repository/configs"
+	sw "ECE461-Team1-Repository/routes"
 )
 
 func main() {
@@ -13,8 +15,12 @@ func main() {
     configs.ConnectDB()
     templog.Printf("Server started")
     router := sw.NewRouter()
-
-    templog.Fatal(http.ListenAndServe("0.0.0.0:8080", CORSHandler(router)))
+    port := os.Getenv("PORT")
+    if port == "" {
+            port = "8080"
+    }
+    templog.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router)))
+    // templog.Fatal(http.ListenAndServe("0.0.0.0:8080", CORSHandler(router)))
 }
 
 
