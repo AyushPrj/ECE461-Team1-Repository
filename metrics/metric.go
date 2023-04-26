@@ -48,7 +48,7 @@ func getRampUpScore(repo api.Repo) (float32, int) {
 	regMatch := regexp.MustCompile(`.*SUM:\s*\d*\s*\d*\s*(\d*)\s*(\d*)`).FindStringSubmatch(clocString)
 	if len(regMatch) < 3 {
 		log.Println(log.DEBUG, "Regex could find no match")
-		return 0,0
+		return 0, 0
 	}
 
 	commentLines := regMatch[1]
@@ -88,7 +88,7 @@ func RampUpScaler(score float32) float32 {
 	if score <= 0.1 {
 		return score
 	} else if score > 0.1 && score <= 0.25 {
-		return 6 * score - 0.5
+		return 6*score - 0.5
 	} else {
 		var denomConst float32 = 0.5625
 		score = (score - 0.25) * (score - 0.25)
@@ -112,7 +112,7 @@ getReviewCoverage returns lines added from pull requests divided by total lines.
 
 func getReviewCoverage(repo api.Repo, numLines int) float32 {
 	reviewLines := api.CountReviewedLines(repo)
-	if (reviewLines > numLines) {
+	if reviewLines > numLines {
 		log.Println(log.DEBUG, "ERROR: Lines reviewed > numlines")
 		return 1.0
 	}
@@ -123,7 +123,7 @@ func getReviewCoverage(repo api.Repo, numLines int) float32 {
 GetMetrics calculates rating for the input repo
 */
 
-func GetMetrics(baseURL string, siteType int, name string) (string) {
+func GetMetrics(baseURL string, siteType int, name string) string {
 	var repo api.Repo
 	// fmt.Printf("net score \n")
 
@@ -139,7 +139,7 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 
 	rampUp, numLines := getRampUpScore(repo)
 	// fmt.Printf("net score 2\n")
-	
+
 	correctness := getCorrectnessScore(repo)
 
 	busFactor := getBusFactor(repo.ContributorsURL)
@@ -172,11 +172,10 @@ func GetMetrics(baseURL string, siteType int, name string) (string) {
 	//	`, "CORRECTNESS_SCORE":` + fmt.Sprintf("%.1f", correctness) + `, "BUS_FACTOR_SCORE":` + fmt.Sprintf("%.2f", busFactor) + `, "RESPONSIVE_MAINTAINER_SCORE":` + fmt.Sprintf("%.2f", responsiveness) +
 	//	`, "LICENSE_SCORE":` + fmt.Sprintf("%d", license) + `, "DEPENDENCY_PINNING_RATE":` + fmt.Sprintf("%.2f", depPinRate) + `, "REVIEW_COVERAGE_SCORE":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
 
-
 	ndjson := `{"NetScore":` + fmt.Sprintf("%.2f", netScore) + `, "RampUp":` + fmt.Sprintf("%.2f", rampUp) +
 		`, "Correctness":` + fmt.Sprintf("%.1f", correctness) + `, "BusFactor":` + fmt.Sprintf("%.2f", busFactor) + `, "ResponsiveMaintainer":` + fmt.Sprintf("%.2f", responsiveness) +
-		`, "LicenseScore":` + fmt.Sprintf("%d", license) + `, "GoodPinningPractice":` + fmt.Sprintf("%.2f", depPinRate) + `, "PullRequest":` + fmt.Sprintf("%.2f", reviewCoverage) +  `}`
-	
+		`, "LicenseScore":` + fmt.Sprintf("%d", license) + `, "GoodPinningPractice":` + fmt.Sprintf("%.2f", depPinRate) + `, "PullRequest":` + fmt.Sprintf("%.2f", reviewCoverage) + `}`
+
 	log.Printf(log.DEBUG, ndjson)
 	fmt.Println(netScore)
 

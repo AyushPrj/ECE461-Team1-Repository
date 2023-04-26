@@ -10,8 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	"fmt"
@@ -440,14 +440,14 @@ func GetDepPinRate(owner, name string) float32 {
 			Repository struct {
 				DependencyGraphManifests struct {
 					TotalCount int `json:"totalCount"`
-					Edges []struct {
+					Edges      []struct {
 						Node struct {
 							Dependencies struct {
 								TotalCount int `json:"totalCount"`
-								Nodes []struct {
-									PackageName      string `json:"packageName"`
-									Requirements     string `json:"requirements"`
-									HasDependencies  bool   `json:"hasDependencies"`
+								Nodes      []struct {
+									PackageName     string `json:"packageName"`
+									Requirements    string `json:"requirements"`
+									HasDependencies bool   `json:"hasDependencies"`
 								} `json:"nodes"`
 							} `json:"dependencies"`
 						} `json:"node"`
@@ -475,7 +475,7 @@ func GetDepPinRate(owner, name string) float32 {
 	versionRegex := regexp.MustCompile(`\d+\.\d+`)
 	for _, edge := range dgm.Edges {
 		for _, dep := range edge.Node.Dependencies.Nodes {
-			totDep++;
+			totDep++
 			if versionRegex.MatchString(dep.Requirements) {
 				pinnedReq += 1
 			}
@@ -513,21 +513,23 @@ func GetPackageRequirements(owner, name string) float32 {
 	for _, val := range temp {
 
 		currentFile := strings.ToLower(val.Name())
-		if (currentFile == "requirements.txt" || currentFile == "package.json") {// Add more if more are found
-			fileName = val.Name() 
+		if currentFile == "requirements.txt" || currentFile == "package.json" { // Add more if more are found
+			fileName = val.Name()
 		}
 	}
 
-	if fileName == "" { return 0 }
+	if fileName == "" {
+		return 0
+	}
 
 	pattern := regexp.MustCompile(`[=><]\d+\.\d+`)
 
 	file, err := os.Open(name + "/" + fileName)
-    if err != nil {
-        log.Println(log.DEBUG, "Error opening file:", err)
-        return 0
-    }
-    defer file.Close()
+	if err != nil {
+		log.Println(log.DEBUG, "Error opening file:", err)
+		return 0
+	}
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	if strings.ToLower(fileName) == "requirements.txt" {
@@ -586,7 +588,7 @@ func CountReviewedLines(repo Repo) int {
 	commits := strings.Split(string(out), "\n")
 
 	for _, commit := range commits {
-		if (len(commit) > 1) {
+		if len(commit) > 1 {
 			parts := strings.Split(commit, " ")
 			hash := parts[0][1 : len(parts[0])-1]
 
