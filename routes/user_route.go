@@ -40,12 +40,12 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 var routes = Routes{
-	Route{
-		"Index",
-		"GET",
-		"/",
-		Index,
-	},
+	// Route{
+	// 	"Index",
+	// 	"GET",
+	// 	"/",
+	// 	Index,
+	// },
 
 	Route{
 		"CreateAuthToken",
