@@ -16,7 +16,7 @@ func TestBusFactor(t *testing.T) {
 func TestResponsivenessAndDepPinRate(t *testing.T) {
 	owner := "cloudinary"
 	name := "cloudinary_npm"
-	if getResponsivenessScore(owner, name) > 1  || getDepPinRate(owner, name) > 1 {
+	if getResponsivenessScore(owner, name) > 1 || getDepPinRate(owner, name) > 1 {
 		t.Fatal("Responsiveness Failed")
 	}
 }
@@ -33,7 +33,7 @@ func TestGetRampupAndCorrectnessScoreAndReviewCoverage(t *testing.T) {
 	tst_ramp, numLines := getRampUpScore(tst)
 	tst_correctness := getCorrectnessScore(tst)
 	tst_coverage := getReviewCoverage(tst, numLines)
-	if tst_ramp >= 1 || tst_correctness != 1.0 || tst_coverage > 1{
+	if tst_ramp >= 1 || tst_correctness != 1.0 || tst_coverage > 1 {
 		t.Fatal("Cloning process Failed")
 	}
 }

@@ -37,7 +37,9 @@ const SearchPackages = () => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: search,
+                    body: JSON.stringify({
+                        "RegEx": `"${search}"`
+                    }),
                 });
             }
 

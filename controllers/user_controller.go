@@ -4,7 +4,10 @@ import (
 	"ECE461-Team1-Repository/configs"
 	"ECE461-Team1-Repository/metrics"
 	models "ECE461-Team1-Repository/models"
+	"archive/zip"
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -195,6 +198,14 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 	packageFilter2 := bson.D{} //"packagemetadata.name": "axios"
 
 	packageCount, err := repoCollection.CountDocuments(context.Background(), packageFilter)
+	if err != nil || packageCount == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusNotFound,
+			Message: "No such package.",
+		})
+		return
+	}
 	numFound, err := historyCollection.CountDocuments(context.Background(), packageFilter2)
 	fmt.Println(numFound)
 
@@ -244,7 +255,7 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 }
 
 type PackageRegExRequest struct {
-	RegEx string `json:"regex"`
+	RegEx string `json:"RegEx"`
 }
 
 // done
@@ -253,6 +264,9 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 
 	// Read the request body and store it as a regex pattern
 	body, err := ioutil.ReadAll(r.Body)
+	body = bytes.ReplaceAll(body, []byte(`\`), []byte(`\\`))
+	// fmt.Println(string(body))
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ModelError{
@@ -262,7 +276,18 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	regexPattern := string(body)
+	var inputBody PackageRegExRequest
+	if err := json.Unmarshal(body, &inputBody); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	regexPattern := inputBody.RegEx
+
 	if regexPattern == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ModelError{
@@ -272,14 +297,27 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find packages based on regex pattern
+	regex, err := regexp.Compile(regexPattern)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	// Find packages based on regex pattern (name)
+	firstFilterNames := []string{}
+	firstFilterVersions := []string{}
+
 	filter := bson.M{"metadata.name": bson.M{"$regex": primitive.Regex{Pattern: regexPattern, Options: ""}}}
 	cur, err := repoCollection.Find(context.Background(), filter)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ModelError{
 			Code:    0,
-			Message: "Unexpected error",
+			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
 		})
 		return
 	}
@@ -307,6 +345,122 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 			Name:    pkg.Metadata.Name,
 			Version: pkg.Metadata.Version,
 		})
+		firstFilterNames = append(firstFilterNames, pkg.Metadata.Name)
+		firstFilterVersions = append(firstFilterVersions, pkg.Metadata.Version)
+	}
+
+	defer cur.Close(context.Background())
+
+	// Find packages based on regex pattern (readme)
+	secondFilter := bson.M{
+		"$and": []bson.M{
+			{"metadata.name": bson.M{"$nin": firstFilterNames}},
+			{"metadata.version": bson.M{"$nin": firstFilterVersions}},
+		},
+	}
+
+	cur, err = repoCollection.Find(context.Background(), secondFilter)
+	if err != nil {
+		fmt.Printf("Error occurred while querying: %v\n", err)
+		// Handle the error accordingly
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    400,
+			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+		})
+		return
+	}
+
+	for cur.Next(context.Background()) {
+		var pkg models.PkgResponse
+		err := cur.Decode(&pkg)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    400,
+				Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+			})
+			return
+		}
+
+		fsFileID := pkg.Data.Content
+
+		content, err := readLargeString(contentCollection, fsFileID)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    400,
+				Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+			})
+			return
+		}
+
+		// Decode the base64 encoded zip file
+		decodedZipFile, err := base64.StdEncoding.DecodeString(content)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    400,
+				Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+			})
+			return
+		}
+
+		// Create a bytes reader for the zip file
+		zipReader, err := zip.NewReader(bytes.NewReader(decodedZipFile), int64(len(decodedZipFile)))
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(models.ModelError{
+				Code:    400,
+				Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+			})
+			return
+		}
+
+		folderName := zipReader.File[0].Name
+
+		// Iterate through the files in the zip archive
+		for _, file := range zipReader.File {
+			// Check if the file is a README (case insensitive) within the inner folder
+			if strings.HasPrefix(file.Name, folderName) && (strings.EqualFold(file.Name, folderName+"readme") || strings.EqualFold(file.Name, folderName+"readme.txt") || strings.EqualFold(file.Name, folderName+"readme.md") || strings.EqualFold(file.Name, folderName+"README.md")) {
+				// Open the README file
+				readmeFile, err := file.Open()
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(models.ModelError{
+						Code:    400,
+						Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+					})
+					return
+				}
+				defer readmeFile.Close()
+
+				// Read the README file content
+				readmeContent, err := ioutil.ReadAll(readmeFile)
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(models.ModelError{
+						Code:    400,
+						Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
+					})
+					return
+				}
+
+				// Check if the regex pattern matches the README content
+				if regex.Match(readmeContent) {
+					// The regex pattern was found in the README content
+					// Add this package to the results
+					results = append(results, PackageVersionName{
+						Name:    pkg.Metadata.Name,
+						Version: pkg.Metadata.Version,
+					})
+				}
+
+				// Since we found the README file, no need to check other files in the zip
+				break
+			}
+		}
+
 	}
 
 	if len(results) == 0 {
@@ -418,9 +572,16 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 				Metadata: modelPackage.Metadata,
 				Data:     modelPackage.Data,
 			}
+			if err := AddPackageHistory(*resp.Metadata, "CREATE"); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(models.ModelError{
+					Code:    http.StatusInternalServerError,
+					Message: "Failed to create package",
+				})
+				return
+			}
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(resp)
-			AddPackageHistory(*resp.Metadata, "CREATE")
 			return
 		} else {
 			json.NewEncoder(w).Encode(models.ModelError{
@@ -581,9 +742,15 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := AddPackageHistory(*result.Metadata, "RATE"); err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    500,
+			Message: "The package rating system choked on at least one of the metrics.",
+		})
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(ndjsondata)
-	AddPackageHistory(*result.Metadata, "RATE")
 }
 
 // done
@@ -617,9 +784,15 @@ func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
 
 	result.Data.Content = ls
 
+	if err := AddPackageHistory(*result.Metadata, "DOWNLOAD"); err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    500,
+			Message: "The package rating system choked on at least one of the metrics.",
+		})
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
-	AddPackageHistory(*result.Metadata, "DOWNLOAD")
 }
 
 // done
@@ -717,17 +890,26 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	)
 
 	id, err := primitive.ObjectIDFromHex(oldContentID)
+	if err != nil {
+		panic(err)
+	}
 	if err := bucket.Delete(id); err != nil {
 		panic(err)
 	}
 
+	if err := AddPackageHistory(*updatedPackage.Metadata, "UPDATE"); err != nil {
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    500,
+			Message: "The package rating system choked on at least one of the metrics.",
+		})
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(models.ModelError{
 		Code:    http.StatusOK,
 		Message: "Version is updated.",
 	})
 
-	AddPackageHistory(*updatedPackage.Metadata, "UPDATE")
 }
 
 // Not done the filter for the database might have to be parsed
@@ -743,9 +925,9 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 
 	type packageResponse struct {
 		Version string `json:"Version"`
-		Name string `json:"Name"`
-		ID string `json:"ID"`
-	};
+		Name    string `json:"Name"`
+		ID      string `json:"ID"`
+	}
 	var search []models.PackageQuery
 	var results []packageResponse
 
@@ -764,13 +946,13 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 	stringmap := extractVersionRanges(search[0].Version)
 
 	var filter, filter1, filter2, filter3 bson.M
-	if(search[0].Name != "*"){
+	if search[0].Name != "*" {
 		filter = bson.M{
 			"metadata.name":    search[0].Name,
 			"metadata.version": stringmap.Exact,
 		}
 		filter1 = bson.M{
-			"metadata.name":   search[0].Name,
+			"metadata.name": search[0].Name,
 			"metadata.version": bson.M{
 				"$gte": stringmap.BoundedRange[0],
 				"$lte": stringmap.BoundedRange[1],
@@ -813,7 +995,6 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	}
-
 
 	cur, err := repoCollection.Find(context.Background(), filter)
 	if err != nil {
@@ -1096,11 +1277,42 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoCollection.Drop(context.Background())
-	contentCollection.Drop(context.Background())
-	historyCollection.Drop(context.Background())
-	fsfilesCollection.Drop(context.Background())
-	fschunksCollection.Drop(context.Background())
+	if err := repoCollection.Drop(context.Background()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the repo collection.",
+		})
+	}
+
+	if err := contentCollection.Drop(context.Background()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the content collection.",
+		})
+	}
+	if err := historyCollection.Drop(context.Background()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the history collection.",
+		})
+	}
+	if err := fsfilesCollection.Drop(context.Background()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the fs.files collection.",
+		})
+	}
+	if err := fschunksCollection.Drop(context.Background()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ModelError{
+			Code:    http.StatusInternalServerError,
+			Message: "An error occurred while dropping the fs.chunks collection.",
+		})
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
