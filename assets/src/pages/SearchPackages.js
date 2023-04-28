@@ -29,10 +29,10 @@ const SearchPackages = () => {
             let response;
             if (searchType === 'name') {
                 response = await fetch(
-                    `http://0.0.0.0:8080/package/byName/${encodeURIComponent(search)}`
+                    `https://webservice-381819.uc.r.appspot.com/package/byName/${encodeURIComponent(search)}`
                 );
             } else {
-                response = await fetch('http://0.0.0.0:8080/package/byRegEx', {
+                response = await fetch('https://webservice-381819.uc.r.appspot.com/package/byRegEx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
