@@ -7,49 +7,13 @@ import (
 	// "io/ioutil"
 	"net/http"
 	"os"
-	"path"
-	"strings"
+	// "path"
+	// "strings"
 
 	sw "ECE461-Team1-Repository/routes"
 	templog "log"
 )
-type customFileServer struct {
-    root http.FileSystem
-}
 
-func (c *customFileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    upath := r.URL.Path
-    if !strings.HasPrefix(upath, "/") {
-        upath = "/" + upath
-        r.URL.Path = upath
-    }
-
-    f, err := c.root.Open(upath)
-    if err != nil {
-        http.ServeFile(w, r, path.Join("static", "index.html"))
-        return
-    }
-    defer f.Close()
-
-    d, err := f.Stat()
-    if err != nil {
-        http.ServeFile(w, r, path.Join("static", "index.html"))
-        return
-    }
-
-    // Set the correct MIME type for JavaScript and CSS files
-    if strings.HasSuffix(upath, ".js") {
-        w.Header().Set("Content-Type", "application/javascript")
-    } else if strings.HasSuffix(upath, ".css") {
-        w.Header().Set("Content-Type", "text/css")
-    }
-
-    http.ServeContent(w, r, d.Name(), d.ModTime(), f)
-}
-
-func CustomFileServer(root http.FileSystem) http.Handler {
-    return &customFileServer{root}
-}
 func main() {
     // Run database
     configs.ConnectDB()
@@ -57,8 +21,11 @@ func main() {
     router := sw.NewRouter()
 
     // Serve the React app's static files
-    fs := CustomFileServer(http.Dir("./static/"))
-    router.PathPrefix("/").Handler(fs)
+    // fs := CustomFileServer(http.Dir("./static/"))
+    router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./build/static/"))))
+    router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        http.ServeFile(w, r, "./build/index.html")
+    })
 
     port := os.Getenv("PORT")
     if port == "" {
@@ -66,26 +33,6 @@ func main() {
     }
 
     templog.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router)))
-}
-
-func serveReactApp(w http.ResponseWriter, r *http.Request) {
-    upath := r.URL.Path
-    filePath := "static" + upath
-
-    // Check if the file exists
-    _, err := os.Stat(filePath)
-
-    // If the file exists, set the correct MIME type
-    if err == nil {
-        if strings.HasSuffix(filePath, ".js") {
-            w.Header().Set("Content-Type", "application/javascript")
-        } else if strings.HasSuffix(filePath, ".css") {
-            w.Header().Set("Content-Type", "text/css")
-        }
-        http.ServeFile(w, r, filePath)
-    } else {
-        http.ServeFile(w, r, "static/index.html")
-    }
 }
 
 func CORSHandler(h http.Handler) http.Handler {
