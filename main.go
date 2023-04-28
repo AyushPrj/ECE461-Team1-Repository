@@ -2,9 +2,9 @@ package main
 
 import (
 	"ECE461-Team1-Repository/configs"
-	"bytes"
+	// "bytes"
 	"fmt"
-	"io/ioutil"
+	// "io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -44,14 +44,7 @@ func (c *customFileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "text/css")
     }
 
-    content, err := ioutil.ReadAll(f)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
-
-    reader := bytes.NewReader(content)
-    http.ServeContent(w, r, d.Name(), d.ModTime(), reader)
+    http.ServeContent(w, r, d.Name(), d.ModTime(), f)
 }
 
 func CustomFileServer(root http.FileSystem) http.Handler {
@@ -64,10 +57,8 @@ func main() {
     router := sw.NewRouter()
 
     // Serve the React app's static files
-    router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-
-    // Catch-all route to serve the React app's index.html file for client-side routing
-    router.PathPrefix("/").HandlerFunc(serveReactApp)
+    fs := CustomFileServer(http.Dir("./static/"))
+    router.PathPrefix("/").Handler(fs)
 
     port := os.Getenv("PORT")
     if port == "" {

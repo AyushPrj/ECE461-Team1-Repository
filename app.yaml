@@ -22,3 +22,7 @@ handlers:
 - url: /.*
   script: auto
   secure: always
+
+- url: /
+  static_files: static/index.html
+  upload: static/index.html
