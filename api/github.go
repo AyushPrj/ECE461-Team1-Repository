@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,8 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"fmt"
 )
 
 var GITHUB_TOKEN string
@@ -299,6 +298,19 @@ func GetRawREADME(repo Repo) string {
 	return string(responseData)
 }
 
+// Global var, list of recognized licenses
+var licenses = []string{
+	"MIT", "Apache", "BSD 3-Clause",
+	"BSD 2-Clause", "ISC", "BSD Zero Clause",
+	"Boost Software", "UPL", "Universal Permissive",
+	"JSON", "Simple Public", "Copyfree Open Innovation",
+	"Xerox", "Sendmail", "All-Permissive", "Artistic",
+	"Berkely Database", "Modified BSD", "CeCILL", "Cryptix General",
+	"Zope Public", "XFree86", "X11", "WxWidgets Library", "WTFPL",
+	"WebM", "Unlicense", "StandardMLofNJ", "Ruby", "SGI Free Software",
+	"Python", "Ruby", "Perl", "OpenLDAP", "Netscape Javascript", "NCSA",
+	"Mozilla Public", "Intel Open Source"}
+
 /*
 GetLicenseFromREADME takes in the raw contents of a README.md file in a string variable. The
 README is checked for one of many licenses compatible with the LGPLv2.1 license. If the function
@@ -308,19 +320,6 @@ finds a specific compatible license, it returns that license, otherwise it retur
 func GetLicenseFromREADME(readmeText string) string {
 
 	// parse readme for license, return specific license if found, return empty string if not found
-
-	licenses := []string{
-		"MIT", "Apache", "BSD 3-Clause",
-		"BSD 2-Clause", "ISC", "BSD Zero Clause",
-		"Boost Software", "UPL", "Universal Permissive",
-		"JSON", "Simple Public", "Copyfree Open Innovation",
-		"Xerox", "Sendmail", "All-Permissive", "Artistic",
-		"Berkely Database", "Modified BSD", "CeCILL", "Cryptix General",
-		"Zope Public", "XFree86", "X11", "WxWidgets Library", "WTFPL",
-		"WebM", "Unlicense", "StandardMLofNJ", "Ruby", "SGI Free Software",
-		"Python", "Ruby", "Perl", "OpenLDAP", "Netscape Javascript", "NCSA",
-		"Mozilla Public", "Intel Open Source"}
-
 	if strings.Contains(readmeText, "License") || strings.Contains(readmeText, "license") {
 
 		for _, license := range licenses {
@@ -336,7 +335,93 @@ func GetLicenseFromREADME(readmeText string) string {
 	}
 
 	return ""
+}
 
+/*
+GetLicenseFromFile look for a license file in cloned directory, if it exists, check to see
+if file has year and a valid license
+*/
+
+func GetLicenseFromFile(owner, name string) int {
+
+	fileName := ""
+	packageJSON := false
+
+	// Get current working directory
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
+
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println(log.DEBUG, "Error navigating to main folder:", err)
+	}
+
+	// Go to repo folder
+	temp, _ := os.ReadDir(name)
+	for _, val := range temp {
+
+		currentFile := strings.ToLower(val.Name())
+		if (strings.Contains(currentFile, "license")) {
+			fileName = val.Name()
+		}
+		if (currentFile == "package.json") {
+			packageJSON = true
+		}
+	}
+
+	if (fileName != "") {
+
+		// Check if file opens
+		file, err := os.Open(name + "/" + fileName)
+		if err != nil {
+			log.Println(log.DEBUG, "Error opening file:", err)
+		} else {
+			defer file.Close()
+
+			// Read file contents
+			data, err := ioutil.ReadAll(file)
+			if err != nil {
+				log.Println(log.DEBUG, "Error reading file:", err)
+			} else {
+
+				// Check if license file contains license
+				dataStr := string(data)
+				for _, license := range licenses {
+					if strings.Contains(dataStr, license) &&
+					strings.Contains(strings.ToLower(dataStr), "copyright") {
+						return 1
+					}
+				}
+			}
+		}
+	}
+
+	type PackageLicenseJSON struct {
+		License interface{} `json:"licenses"`
+	}
+
+	if (packageJSON) {
+		packageJSONFile, err := ioutil.ReadFile(name + "/package.json")
+		if err != nil {
+			log.Println(log.DEBUG, "Error reading package.json file:", err)
+			return 0
+		}
+
+		// Check if packageJSON contains license header
+		dataStr := string(packageJSONFile)
+		if !strings.Contains(dataStr, "license") { return 0 }
+
+		// Check if packageJSON contains license
+		for _, license := range licenses {
+			if strings.Contains(dataStr, license) {
+				return 1
+			}
+		}
+	}
+
+	return 0
 }
 
 /*
@@ -458,7 +543,6 @@ func GetDepPinRate(owner, name string) float32 {
 	}
 
 	var respObj DependencyGraph
-	fmt.Println(GetPackageRequirements(owner, name))
 
 	if err := json.Unmarshal(respData, &respObj); err != nil {
 		log.Println(log.DEBUG, err)
@@ -477,7 +561,7 @@ func GetDepPinRate(owner, name string) float32 {
 		for _, dep := range edge.Node.Dependencies.Nodes {
 			totDep++
 			if versionRegex.MatchString(dep.Requirements) {
-				pinnedReq += 1
+				pinnedReq++
 			}
 		}
 	}
@@ -493,7 +577,7 @@ and/or a package.json to find dependencies and determine if they are pinned.
 
 func GetPackageRequirements(owner, name string) float32 {
 
-	fileName := ""
+	fileNames := []string{"", ""} // [requirements.txt, package.json]
 	numDependencies := 0
 	numPinned := 0
 
@@ -513,26 +597,24 @@ func GetPackageRequirements(owner, name string) float32 {
 	for _, val := range temp {
 
 		currentFile := strings.ToLower(val.Name())
-		if currentFile == "requirements.txt" || currentFile == "package.json" { // Add more if more are found
-			fileName = val.Name()
+
+		if (currentFile == "requirements.txt") { fileNames[0] = val.Name() }
+		if (currentFile == "package.json") { fileNames[1] = val.Name() }
+	}
+
+	pattern := regexp.MustCompile(`[=><~^]\d+\.\d+`)
+
+	if strings.ToLower(fileNames[0]) != "" {
+
+
+		file, err := os.Open(name + "/" + fileNames[0])
+		if err != nil {
+			log.Println(log.DEBUG, "Error opening file:", err)
+			return 0
 		}
-	}
+		defer file.Close()
 
-	if fileName == "" {
-		return 0
-	}
-
-	pattern := regexp.MustCompile(`[=><]\d+\.\d+`)
-
-	file, err := os.Open(name + "/" + fileName)
-	if err != nil {
-		log.Println(log.DEBUG, "Error opening file:", err)
-		return 0
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	if strings.ToLower(fileName) == "requirements.txt" {
+		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			line := strings.TrimSpace(scanner.Text())
 			if !strings.HasPrefix(line, "#") {
@@ -546,9 +628,46 @@ func GetPackageRequirements(owner, name string) float32 {
 			log.Println(log.DEBUG, "Error scanning file:", err, numDependencies)
 		}
 	}
-	if strings.ToLower(fileName) == "package.json" {
-		// TODO: NEED TO IMPLEMENT
+	if strings.ToLower(fileNames[1]) != "" && numDependencies == 0 {
+		// Read the entire JSON file
+		bytes, err := ioutil.ReadFile(name + "/" + fileNames[1])
+		if err != nil {
+			log.Println(log.DEBUG, "Error reading file:", err)
+			return 0
+		}
+
+		// Parse JSON
+		var packageJSON map[string]interface{}
+		err = json.Unmarshal(bytes, &packageJSON)
+		if err != nil {
+			log.Println(log.DEBUG, "Error parsing JSON:", err)
+			return 0
+		}
+
+		// Check for dependencies and determine if they are pinned
+		dependencies, ok := packageJSON["dependencies"].(map[string]interface{})
+		if ok {
+			for _, val := range dependencies {
+				numDependencies++
+				if pattern.MatchString(val.(string)) {
+					numPinned++
+				}
+			}
+		}
+
+		// Check for devDependencies and determine if they are pinned
+		dependencies, ok = packageJSON["devDependencies"].(map[string]interface{})
+		if ok {
+			for _, val := range dependencies {
+				numDependencies++
+				if pattern.MatchString(val.(string)) {
+					numPinned++
+				}
+			}
+		}
 	}
+
+	if (numDependencies == 0) { return 0 }
 
 	return float32(numPinned) / float32(numDependencies)
 }
@@ -615,7 +734,7 @@ func CountReviewedLines(repo Repo) int {
 							log.Println(log.DEBUG, err)
 						}
 
-						totLinesReviewed += added + deleted // IDK if needs to be + or -
+						totLinesReviewed += added - deleted // IDK if needs to be + or -
 					}
 				}
 			}
@@ -624,7 +743,29 @@ func CountReviewedLines(repo Repo) int {
 	}
 
 	os.Chdir(dir)
-	rem := exec.Command("rm", "-r", repo.Name)
+	if totLinesReviewed > 0 { return totLinesReviewed }
+	return -totLinesReviewed
+}
+
+/*
+DeleteClonedRepo deletes the cloned repo from the local machine.
+*/
+
+func DeleteClonedRepo(repo Repo) {
+	// Get current working directory
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Println(log.DEBUG, "Error:", err)
+	}
+	log.Println(log.DEBUG, "Current directory:", dir)
+
+	// Navigate to the main folder
+	if err := os.Chdir(dir); err != nil {
+		log.Println("Error navigating to main folder:", err)
+	}
+
+	// Remove repo folder
+	rem := exec.Command("rm", "-rf", repo.Name)
 	err = rem.Run()
 
 	if err != nil {
@@ -632,5 +773,4 @@ func CountReviewedLines(repo Repo) int {
 	}
 	os.RemoveAll(repo.Name)
 
-	return totLinesReviewed
 }

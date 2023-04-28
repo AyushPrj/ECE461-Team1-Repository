@@ -1,2 +1,3 @@
+https://github.com/HorseAJ86/node-jquery
 https://github.com/TheAlgorithms/Python
 https://github.com/binder-examples/requirements

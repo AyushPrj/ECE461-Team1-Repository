@@ -21,16 +21,23 @@ func getResponsivenessScore(owner, name string) float32 {
 	}
 }
 
-// getLicenseScore checks if the output of GetLicenseFromREADME is blank, and assigns 0 or 1 accordingly
+/*
+getLicenseScore checks to see if license is in the README, if it is not, then check
+if there is a file containing a license
+*/
 func getLicenseScore(repo api.Repo) int {
 	readme_string := api.GetRawREADME(repo)
 	license_string := api.GetLicenseFromREADME(readme_string)
 
 	if license_string == "" {
-		return 0
+		return api.GetLicenseFromFile(repo.Owner.Login, repo.Name)
 	}
 	return 1
 }
+
+/*
+getCorrectnessScore calls api to check repo for correctness
+*/
 
 func getCorrectnessScore(repo api.Repo) float64 {
 	return api.CheckRepoForTest(repo)
@@ -112,11 +119,11 @@ getReviewCoverage returns lines added from pull requests divided by total lines.
 
 func getReviewCoverage(repo api.Repo, numLines int) float32 {
 	reviewLines := api.CountReviewedLines(repo)
-	if reviewLines > numLines {
-		log.Println(log.DEBUG, "ERROR: Lines reviewed > numlines")
-		return 1.0
+
+	if (reviewLines < numLines) {
+		return float32(reviewLines) / float32(numLines)
 	}
-	return float32(reviewLines) / float32(numLines)
+	return float32(numLines) / float32(reviewLines)
 }
 
 /*
@@ -129,7 +136,6 @@ func GetMetrics(baseURL string, siteType int, name string) string {
 
 	if siteType == api.NPM {
 		giturl := api.GetGithubURL(name)
-		// parse the github url
 		gitLinkMatch := regexp.MustCompile(".*github.com/(.*).git")
 		githubURL := gitLinkMatch.FindStringSubmatch(giturl)[1]
 		repo = api.GetRepo(githubURL)
@@ -138,7 +144,6 @@ func GetMetrics(baseURL string, siteType int, name string) string {
 	}
 
 	rampUp, numLines := getRampUpScore(repo)
-	// fmt.Printf("net score 2\n")
 
 	correctness := getCorrectnessScore(repo)
 
@@ -147,15 +152,31 @@ func GetMetrics(baseURL string, siteType int, name string) string {
 	responsiveness := getResponsivenessScore(repo.Owner.Login, repo.Name)
 
 	license := getLicenseScore(repo)
+  
+	depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
 
-	//depPinRate := getDepPinRate(repo.Owner.Login, repo.Name)
-	depPinRate := 0.3
 	reviewCoverage := getReviewCoverage(repo, numLines)
+
+	// delete the cloned repo
+	api.DeleteClonedRepo(repo)
 
 	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license
 	//netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
 	// NEW FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .2 * responsiveness + .1 * depPinRate + .2 * reviewCoverage) * license
-	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.1*float32(depPinRate) + 0.2*reviewCoverage) * float32(license)
+	netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.1*depPinRate + 0.1*reviewCoverage) * float32(license)
+	/*
+	NEW FORMULA SUMMARY:
+		- Ramp-up time: 10%
+		- Correctness: 10%
+		- Bus Factor: 30%
+		- Responsiveness: 30%
+		- Dependency Pinning Rate: 10%
+		- Code Review Coverage: 10%
+
+		All or nothing for license: (if license is 0, then the entire score is 0)
+		- License: 100%
+	*/
+
 
 	// Log (info)
 	log.Printf(log.INFO, "Name: %v", name)
