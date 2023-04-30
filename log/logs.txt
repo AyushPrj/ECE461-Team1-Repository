@@ -1,0 +1,6 @@
+2023/04/30 00:28:51 Running Test Case (println)
+2023/04/30 00:28:51 Running Test Case (printf)
+2023/04/30 00:29:39 Running Test Case (println)
+2023/04/30 00:29:39 Running Test Case (printf)
+2023/04/30 00:30:42 Running Test Case (println)
+2023/04/30 00:30:42 Running Test Case (printf)

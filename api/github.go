@@ -757,7 +757,6 @@ func DeleteClonedRepo(repo Repo) {
 	if err != nil {
 		log.Println(log.DEBUG, "Error:", err)
 	}
-	log.Println(log.DEBUG, "Current directory:", dir)
 
 	// Navigate to the main folder
 	if err := os.Chdir(dir); err != nil {

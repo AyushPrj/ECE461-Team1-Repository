@@ -3,12 +3,33 @@ package api
 import (
 	"os"
 	"testing"
+	"os/exec"
 )
 
 func TestGetGraphQL(t *testing.T) {
 	if getGraphQLData(`{"query" : "query{repository(owner: \"cloudinary\", name: \"cloudinary_npm\") {total: issues {totalCount} closed:issues(states: CLOSED) {totalCount}}}"}`)[0] != 123 {
-		t.Fatal("Error getting data from npm url!")
+		t.Fatal("Error getting data from npm url (Probably invalid github token)!")
 	}
+}
+
+func TestRESTler(t *testing.T) {
+	// Set RESTler command and arguments
+	cmd := exec.Command("restler", "-spec", "openapi.json", "-output", "test-results.json")
+
+	// Run RESTler command
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Error running RESTler: %s\n%s", err, out)
+	}
+
+	// Read RESTler test results
+	f, err := os.Open("test-results.json")
+	if err != nil {
+		t.Fatalf("Error reading test results: %s", err)
+	}
+	defer f.Close()
+
+	// TODO: parse RESTler test results and check for errors
 }
 
 func TestGetRequest(t *testing.T) {
