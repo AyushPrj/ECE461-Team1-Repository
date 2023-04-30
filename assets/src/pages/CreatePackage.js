@@ -98,9 +98,8 @@ const CreatePackage = () => {
         }
     };
 
-
     return (
-        <Container>
+        <Container component="main" tabIndex="0">
             <Box mt={4} mb={4}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Create Package
@@ -117,12 +116,16 @@ const CreatePackage = () => {
                                 accept=".zip"
                                 onChange={handleUpload}
                                 label="Content (ZIP File)"
+                                required
+                                autoFocus
+                                tabIndex="0"
                                 inputProps={{
-                                    ref: register('Content', { required: true })
+                                    ref: register('Content', { required: true }),
+                                    'aria-label': 'Content (ZIP File)',
                                 }}
                                 startAdornment={
                                     <InputAdornment position="start">
-                                        <IconButton edge="start">
+                                        <IconButton edge="start" aria-label="Attach ZIP file">
                                             <AttachFile />
                                         </IconButton>
                                     </InputAdornment>
@@ -131,7 +134,13 @@ const CreatePackage = () => {
                         </FormControl>
                     </Grid>
                     <Grid item xs={12}>
-                        <Button variant="contained" color="primary" type="submit">
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            type="submit"
+                            tabIndex="0"
+                            aria-label="Submit package creation"
+                        >
                             Submit
                         </Button>
                     </Grid>

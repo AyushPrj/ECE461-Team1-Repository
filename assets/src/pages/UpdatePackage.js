@@ -127,7 +127,7 @@ const UpdatePackage = () => {
 
 
     return (
-        <Container>
+        <Container component="main" tabIndex="0">
             <Box mt={4} mb={4}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Update Package
@@ -142,7 +142,13 @@ const UpdatePackage = () => {
                                 id="id"
                                 type="text"
                                 label="Package ID"
+                                required
+                                autoFocus
+                                tabIndex="0"
                                 {...register('id', { required: true })}
+                                inputProps={{
+                                    'aria-label': 'Package ID',
+                                }}
                             />
                         </FormControl>
                     </Grid>
@@ -155,12 +161,15 @@ const UpdatePackage = () => {
                                 accept=".zip"
                                 onChange={handleUpload}
                                 label="Content (ZIP File)"
+                                required
+                                tabIndex="0"
                                 inputProps={{
-                                    ref: register('Content', { required: true })
+                                    ref: register('Content', { required: true }),
+                                    'aria-label': 'Content (ZIP File)',
                                 }}
                                 startAdornment={
                                     <InputAdornment position="start">
-                                        <IconButton edge="start">
+                                        <IconButton edge="start" aria-label="Attach ZIP file">
                                             <AttachFile />
                                         </IconButton>
                                     </InputAdornment>
@@ -174,6 +183,8 @@ const UpdatePackage = () => {
                             color="primary"
                             type="submit"
                             onClick={handleClick}
+                            tabIndex="0"
+                            aria-label="Submit package update"
                         >
                             Submit
                         </Button>

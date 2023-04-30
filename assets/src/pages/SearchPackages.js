@@ -72,7 +72,7 @@ const SearchPackages = () => {
     };
 
     return (
-        <Container>
+        <Container component="main" tabIndex="0">
             <Box mt={4} mb={4}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Search Packages
@@ -84,6 +84,12 @@ const SearchPackages = () => {
                         label="Search"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        required
+                        autoFocus
+                        tabIndex="0"
+                        inputProps={{
+                            'aria-label': 'Search packages',
+                        }}
                     />
                     <Button
                         variant="contained"
@@ -91,6 +97,8 @@ const SearchPackages = () => {
                         type="submit"
                         disabled={isLoading}
                         style={{ marginLeft: 8 }}
+                        tabIndex="0"
+                        aria-label="Submit search"
                     >
                         Search
                     </Button>
@@ -103,24 +111,31 @@ const SearchPackages = () => {
                             setSearchType(e.target.value);
                             setResults([]); // Clear the search results
                         }}
+                        aria-label="Search type"
                     >
                         <FormControlLabel
                             value="name"
                             control={<Radio />}
                             label="Search by Name"
+                            tabIndex="0"
                         />
                         <FormControlLabel
                             value="regex"
                             control={<Radio />}
                             label="Search by Regex"
+                            tabIndex="0"
                         />
                     </RadioGroup>
                 </FormControl>
             </form>
             {isLoading ? (
-                <CircularProgress />
+                <CircularProgress
+                    tabIndex="0"
+                    role="status"
+                    aria-label="Loading search results"
+                />
             ) : (
-                <List>
+                <List aria-label="Search results">
                     {results.map((result, index) => (
                         <ListItem key={index}>
                             <ListItemText

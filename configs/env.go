@@ -4,7 +4,7 @@ import (
 	// "log"
 	"context"
 	"fmt"
-	"os"
+	//"os"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
@@ -38,8 +38,9 @@ func EnvMongoURI() string {
 	// if err != nil {
 	//     log.Fatal("Error loading .env file")
 	// }
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	secretName := "MONGOURI"
-	mongouri, _ := getSecret(projectID, secretName)
-	return mongouri
+	//projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	//secretName := "MONGOURI"
+	//mongouri, _ := getSecret(projectID, secretName)
+	// return mongouri
+	return "mongodb+srv://ece461team7_new:uQaUIvLWcMbgujtt@cluster0.a747pma.mongodb.net/?retryWrites=true&w=majority"
 }

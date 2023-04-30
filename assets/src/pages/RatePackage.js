@@ -46,7 +46,7 @@ const RatePackage = () => {
     };
 
     return (
-        <Container>
+        <Container component="main" tabIndex="0">
             <Box mt={4} mb={4}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Rate Package
@@ -62,6 +62,12 @@ const RatePackage = () => {
                                 type="text"
                                 label="Package ID"
                                 {...register('id', { required: true })}
+                                required
+                                autoFocus
+                                tabIndex="0"
+                                inputProps={{
+                                    'aria-label': 'Package ID',
+                                }}
                             />
                         </FormControl>
                     </Grid>
@@ -70,6 +76,8 @@ const RatePackage = () => {
                             variant="contained"
                             color="primary"
                             type="submit"
+                            tabIndex="0"
+                            aria-label="Submit package ID"
                         >
                             Submit
                         </Button>
@@ -79,7 +87,9 @@ const RatePackage = () => {
             {response && (
                 <Box mt={4}>
                     <Paper elevation={3} sx={{ padding: 2 }}>
-                        <pre>{JSON.stringify(response, null, 2)}</pre>
+                        <pre tabIndex="0" aria-label="Package rating response">
+                            {JSON.stringify(response, null, 2)}
+                        </pre>
                     </Paper>
                 </Box>
             )}

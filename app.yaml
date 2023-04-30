@@ -16,7 +16,7 @@ runtime: go118
 
 handlers:
 - url: /static
-  static_dir: build/static
+  static_dir: assets/build/static
 
 - url: /.*
   script: auto

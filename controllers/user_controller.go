@@ -1310,16 +1310,16 @@ func extractVersionRanges(versionString string) VersionRanges {
 // Check user ? when to return 401
 func RegistryReset(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	authToken := r.Header.Get("X-Authorization")
-	if authToken == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, err := w.Write([]byte("There is missing field(s) in the AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
-		if err != nil {
-			fmt.Println("Error writing response:", err)
-		}
-		return
-	}
+	// authToken := r.Header.Get("X-Authorization")
+	// if authToken == "" {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	// 	_, err := w.Write([]byte("There is missing field(s) in the AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+	// 	if err != nil {
+	// 		fmt.Println("Error writing response:", err)
+	// 	}
+	// 	return
+	// }
 
 	if err := repoCollection.Drop(context.Background()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -1358,7 +1358,7 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.WriteHeader(http.StatusBadRequest)
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, err := w.Write([]byte("Registry is reset."))
 	if err != nil {
