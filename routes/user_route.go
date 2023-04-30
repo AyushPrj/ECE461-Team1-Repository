@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"ECE461-Team1-Repository/controllers"
+	"github.com/gorilla/mux"
 )
 
 type Route struct {
@@ -40,12 +40,12 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 var routes = Routes{
-	Route{
-		"Index",
-		"GET",
-		"/",
-		Index,
-	},
+	// Route{
+	// 	"Index",
+	// 	"GET",
+	// 	"/",
+	// 	Index,
+	// },
 
 	Route{
 		"CreateAuthToken",

@@ -9,7 +9,6 @@
  */
 package swagger
 
-
 // One entry of the history of this package.
 type PackageHistoryEntry struct {
 	User            *User            `json:"User" bson:"user"`

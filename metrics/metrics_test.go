@@ -3,6 +3,7 @@ package metrics
 import (
 	"ECE461-Team1-Repository/api"
 	"testing"
+	"encoding/json"
 )
 
 func TestBusFactor(t *testing.T) {
@@ -15,7 +16,7 @@ func TestBusFactor(t *testing.T) {
 func TestResponsivenessAndDepPinRate(t *testing.T) {
 	owner := "cloudinary"
 	name := "cloudinary_npm"
-	if getResponsivenessScore(owner, name) > 1  || getDepPinRate(owner, name) > 1 {
+	if getResponsivenessScore(owner, name) > 1 || getDepPinRate(owner, name) > 1 {
 		t.Fatal("Responsiveness Failed")
 	}
 }
@@ -32,7 +33,7 @@ func TestGetRampupAndCorrectnessScoreAndReviewCoverage(t *testing.T) {
 	tst_ramp, numLines := getRampUpScore(tst)
 	tst_correctness := getCorrectnessScore(tst)
 	tst_coverage := getReviewCoverage(tst, numLines)
-	if tst_ramp >= 1 || tst_correctness != 1.0 || tst_coverage > 1{
+	if tst_ramp >= 1 || tst_correctness != 1.0 || tst_coverage > 1 {
 		t.Fatal("Cloning process Failed")
 	}
 }
@@ -47,11 +48,18 @@ func TestScaler(t *testing.T) {
 }
 
 func TestGetMetric(t *testing.T) {
-	// url := "https://www.npmjs.com/package/express"
-	// siteType := 0
-	// name := "express"
-	// netscore, _ := GetMetrics(url, siteType, name)
-	// if netscore > 1 {
-	// 	t.Fatal("GetMetric Failed")
-	// }
+	type metricsStruct struct {
+		NetScore float32 `json:"NET_SCORE"`
+	}
+	var data metricsStruct
+
+	url := "https://www.npmjs.com/package/express"
+	siteType := api.GITHUB
+	name := "expressjs/express"
+
+	json.Unmarshal([]byte(GetMetrics(url, siteType, name)), &data)
+
+	if data.NetScore < 0 || data.NetScore > 1 {
+		t.Fatal("GetMetric Failed: Netscore =", data.NetScore)
+	}
 }

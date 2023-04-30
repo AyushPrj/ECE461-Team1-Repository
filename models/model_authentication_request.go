@@ -10,7 +10,6 @@
 package swagger
 
 type AuthenticationRequest struct {
-
 	User *User `json:"User"`
 
 	Secret *UserAuthenticationInfo `json:"Secret"`
