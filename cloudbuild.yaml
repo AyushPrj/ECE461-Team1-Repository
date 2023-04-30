@@ -21,19 +21,24 @@
 # - name: 'gcr.io/cloud-builders/docker'
 #   # args: ['push', 'us-central1-docker.pkg.dev/webservice-381819/cloud-run-source-deploy/ece461-team7/hello:3d9e82dcc2ec3fb18d77f329d33546b36aaaf8b7']
 #   args: ['push', 'us-central1-docker.pkg.dev/webservice-381819/cloud-run-source-deploy/ece461-team7/webtest']
-steps:
+# steps:
 # - name: 'gcr.io/cloud-builders/docker'
 #   entrypoint: 'bash'
 #   args: ['-c', 'echo $$MONGOURI']
 #   secretEnv: ['MONGOURI']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--platform', 'linux/amd64', '-t', 'us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest', '--build-arg', 'MONGOURI=$$MONGOURI', '.']
-  secretEnv: ['MONGOURI']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest']
-availableSecrets:
-  secretManager:
-  - versionName: projects/webservice-381819/secrets/MONGOURI/versions/1
-    env: 'MONGOURI'
+# - name: 'gcr.io/cloud-builders/docker'
+#   args: ['build', '--platform', 'linux/amd64', '-t', 'us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest', '--build-arg', 'MONGOURI=$$MONGOURI', '.']
+#   secretEnv: ['MONGOURI']
+# - name: 'gcr.io/cloud-builders/docker'
+#   args: ['push', 'us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest']
+# availableSecrets:
+#   secretManager:
+#   - versionName: projects/webservice-381819/secrets/MONGOURI/versions/1
+#     env: 'MONGOURI'
 # gcloud builds submit --config cloudbuild.yaml . 
 # docker run --publish 0.0.0.0:8080:8080 --env "MONGOURI=$MONGOURI" us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest
+steps:
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args: ['-c', 'gcloud config set app/cloud_build_timeout 1600 && gcloud app deploy']
+timeout: '1600s'
