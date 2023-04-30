@@ -12,6 +12,7 @@
 # below:
 .git
 .gitignore
+assets/
 
 # Binaries for programs and plugins
 *.exe
