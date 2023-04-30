@@ -719,16 +719,16 @@ func PackageDelete(w http.ResponseWriter, r *http.Request) {
 // done... dont need auth?
 func PackageRate(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	authToken := r.Header.Get("X-Authorization")
-	if authToken == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
-		if err != nil {
-			fmt.Println("Error writing response:", err)
-		}
-		return
-	}
+	// authToken := r.Header.Get("X-Authorization")
+	// if authToken == "" {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	// 	_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+	// 	if err != nil {
+	// 		fmt.Println("Error writing response:", err)
+	// 	}
+	// 	return
+	// }
 
 	vars := mux.Vars(r)
 	resourceID := vars["id"]
