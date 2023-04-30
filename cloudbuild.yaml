@@ -27,7 +27,7 @@ steps:
 #   args: ['-c', 'echo $$MONGOURI']
 #   secretEnv: ['MONGOURI']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest', '--build-arg', 'MONGOURI=$$MONGOURI', '.']
+  args: ['build', '--platform', 'linux/amd64', '-t', 'us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest', '--build-arg', 'MONGOURI=$$MONGOURI', '.']
   secretEnv: ['MONGOURI']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest']
@@ -36,4 +36,4 @@ availableSecrets:
   - versionName: projects/webservice-381819/secrets/MONGOURI/versions/1
     env: 'MONGOURI'
 # gcloud builds submit --config cloudbuild.yaml . 
-# docker run --env "MONGOURI=$MONGOURI" us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest
+# docker run --publish 0.0.0.0:8080:8080 --env "MONGOURI=$MONGOURI" us-central1-docker.pkg.dev/webservice-381819/docker-repo/webtest

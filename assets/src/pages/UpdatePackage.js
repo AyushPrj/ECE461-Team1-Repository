@@ -88,7 +88,7 @@ const UpdatePackage = () => {
         };
 
         try {
-            const response = await fetch(`http://localhost:8080/package/${id}`, {
+            const response = await fetch(`https://webservice-381819.uc.r.appspot.com/package/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

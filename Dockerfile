@@ -4,13 +4,15 @@ FROM golang:1.18
 
 WORKDIR /app
 
+ENV PORT 8080
+ENV HOST 0.0.0.0
+
 #copy files
 COPY . ./
 RUN go mod tidy && go mod download
 
 #build
-WORKDIR /main/
-RUN go build -o main main.go
+RUN go build -o maine main.go
 
 #set env vars
 ARG MONGOURI
@@ -25,5 +27,5 @@ EXPOSE 8080
 
 #run main
 # CMD HOME=/root go run main/main.go 
-CMD ["./main"]
+CMD ["./maine"]
 

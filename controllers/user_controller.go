@@ -46,10 +46,12 @@ func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	defaultUser.Name = "ece30861defaultadminuser"
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil || requestBody == (models.AuthenticationRequest{}) || *requestBody.User != defaultUser {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the AuthenticationRequest or it is formed improperly."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -57,11 +59,12 @@ func CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	// resource - https://mattermost.com/blog/how-to-build-an-authentication-microservice-in-golang-from-scratch/
 
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	json.NewEncoder(w).Encode(models.ModelError{
-		Code:    501,
-		Message: "This system does not support authentication.",
-	})
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, err = w.Write([]byte("This system does not support authentication."))
+	if err != nil {
+		fmt.Println("Error writing response:", err)
+	}
+	return
 }
 
 type Response struct {
@@ -75,11 +78,11 @@ func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
 	packageName := vars["name"]
 	if packageName == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -88,11 +91,11 @@ func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
 	cur, err := repoCollection.Find(context.Background(), filter)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -102,11 +105,11 @@ func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
 		err := cur.Decode(&pkg)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding..."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 		packageIDs = append(packageIDs, pkg.Data.Content)
@@ -114,12 +117,12 @@ func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
 
 	// Check if any packages were found
 	if len(packageIDs) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    404,
-			Message: "Package does not exist.",
-		})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -137,10 +140,11 @@ func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    http.StatusInternalServerError,
-				Message: "An error occurred while deleting the associated GridFS files and chunks.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding 2..."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -149,33 +153,33 @@ func PackageByNameDelete(w http.ResponseWriter, r *http.Request) {
 	_, err = repoCollection.DeleteMany(context.Background(), filter)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
-	response := models.ModelError{
-		Code:    200,
-		Message: "Package is deleted.",
-	}
 	historyfilter := bson.M{"packageMetadata.name": packageName}
 	_, err = historyCollection.DeleteMany(context.Background(), historyfilter)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, err = w.Write([]byte("Package is deleted."))
+	if err != nil {
+		fmt.Println("Error writing response:", err)
+	}
 }
 
 // done... how do i get a 400 error?
@@ -186,11 +190,11 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 
 	if resourceName == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -200,10 +204,11 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 	packageCount, err := repoCollection.CountDocuments(context.Background(), packageFilter)
 	if err != nil || packageCount == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusNotFound,
-			Message: "No such package.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("No such package."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	numFound, err := historyCollection.CountDocuments(context.Background(), packageFilter2)
@@ -211,10 +216,11 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil || packageCount == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusNotFound,
-			Message: "No such package.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("No such package."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -224,10 +230,11 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    0,
-			Message: "unexpected error",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("Unexpected error"))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -239,10 +246,11 @@ func PackageByNameGet(w http.ResponseWriter, r *http.Request) {
 		err := cur.Decode(&result)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    0,
-				Message: "unexpected error",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("Unexpected error"))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 		results = append(results, result)
@@ -269,20 +277,22 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	var inputBody PackageRegExRequest
 	if err := json.Unmarshal(body, &inputBody); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -290,20 +300,22 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 
 	if regexPattern == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	regex, err := regexp.Compile(regexPattern)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -314,11 +326,12 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 	filter := bson.M{"metadata.name": bson.M{"$regex": primitive.Regex{Pattern: regexPattern, Options: ""}}}
 	cur, err := repoCollection.Find(context.Background(), filter)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    0,
-			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -335,10 +348,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		err := cur.Decode(&pkg)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    0,
-				Message: "Unexpected error",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("Unexpected error"))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 		results = append(results, PackageVersionName{
@@ -364,10 +378,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Error occurred while querying: %v\n", err)
 		// Handle the error accordingly
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -376,10 +391,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		err := cur.Decode(&pkg)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    400,
-				Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -388,10 +404,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		content, err := readLargeString(contentCollection, fsFileID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    400,
-				Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -399,10 +416,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		decodedZipFile, err := base64.StdEncoding.DecodeString(content)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    400,
-				Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -410,10 +428,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 		zipReader, err := zip.NewReader(bytes.NewReader(decodedZipFile), int64(len(decodedZipFile)))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    400,
-				Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -427,10 +446,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 				readmeFile, err := file.Open()
 				if err != nil {
 					w.WriteHeader(http.StatusBadRequest)
-					json.NewEncoder(w).Encode(models.ModelError{
-						Code:    400,
-						Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-					})
+					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+					_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+					if err != nil {
+						fmt.Println("Error writing response:", err)
+					}
 					return
 				}
 				defer readmeFile.Close()
@@ -439,10 +459,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 				readmeContent, err := ioutil.ReadAll(readmeFile)
 				if err != nil {
 					w.WriteHeader(http.StatusBadRequest)
-					json.NewEncoder(w).Encode(models.ModelError{
-						Code:    400,
-						Message: "There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-					})
+					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+					_, err := w.Write([]byte("There is missing field(s) in the PackageRegEx/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+					if err != nil {
+						fmt.Println("Error writing response:", err)
+					}
 					return
 				}
 
@@ -465,10 +486,11 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 
 	if len(results) == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusNotFound,
-			Message: "No package found under this regex.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("No package found under this regex."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -479,28 +501,15 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 
 // done.. dont need auth?
 func PackageCreate(w http.ResponseWriter, r *http.Request) {
-	// Get the authentication token from the request header
-	// authToken := r.Header.Get("X-Authorization")
-	// if authToken == "" {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	fmt.Println("here1")
-	// 	json.NewEncoder(w).Encode(models.ModelError{
-	// 		Code:    http.StatusBadRequest,
-	// 		Message: " is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-	// 	})
-	// 	return
-	// }
-
-	// Decode the request body into a ModelPackage struct
-	//var modelPackage models.ModelPackage
 	var packageData models.PackageData
 	err := json.NewDecoder(r.Body).Decode(&packageData)
 	if err != nil {
-		fmt.Println("here2")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly (e.g. Content and URL are both set), or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	var newMetadata models.PackageMetadata
@@ -515,10 +524,12 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	largeString := packageData.Content
 	fileID, err := storeLargeString(contentCollection, largeString)
 	if err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly (e.g. Content and URL are both set), or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	packageData.Content = fileID.Hex()
@@ -526,11 +537,12 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	if e {
 		newMetadata.Version = ver
 	} else {
-		fmt.Println("here4")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly (e.g. Content and URL are both set), or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -556,10 +568,11 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 			//insert
 			if _, err := repoCollection.InsertOne(context.Background(), modelPackage); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(models.ModelError{
-					Code:    http.StatusInternalServerError,
-					Message: "Failed to create package",
-				})
+				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+				_, err := w.Write([]byte("Unexpected error"))
+				if err != nil {
+					fmt.Println("Error writing response:", err)
+				}
 				return
 			}
 			// Return the created package metadata
@@ -574,27 +587,36 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 			}
 			if err := AddPackageHistory(*resp.Metadata, "CREATE"); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(models.ModelError{
-					Code:    http.StatusInternalServerError,
-					Message: "Failed to create package",
-				})
+				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+				_, err := w.Write([]byte("Unexpected error"))
+				if err != nil {
+					fmt.Println("Error writing response:", err)
+				}
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(resp)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err = w.Write([]byte("Success. Check the ID in the returned metadata for the official ID."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		} else {
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    424,
-				Message: "Package is not uploaded due to the disqualified rating.",
-			})
+			w.WriteHeader(http.StatusFailedDependency)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("Package is not uploaded due to the disqualified rating."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 	} else {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    409,
-			Message: "Package already exists",
-		})
+		w.WriteHeader(http.StatusConflict)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("Package exists already."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	// Generate a unique package ID and store the package in the database
@@ -625,10 +647,11 @@ func PackageDelete(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -636,10 +659,12 @@ func PackageDelete(w http.ResponseWriter, r *http.Request) {
 
 	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&temp)
 	if err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    404,
-			Message: "Package does not exist.",
-		})
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err = w.Write([]byte("Package does not exist."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -664,29 +689,31 @@ func PackageDelete(w http.ResponseWriter, r *http.Request) {
 	result, err := repoCollection.DeleteOne(context.Background(), bson.M{"_id": objectId})
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusInternalServerError,
-			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	if result.DeletedCount == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusNotFound,
-			Message: "Package does not exist.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err = w.Write([]byte("Package does not exist."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(models.ModelError{
-		Code:    http.StatusOK,
-		Message: "Package is deleted.",
-	})
-
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, err = w.Write([]byte("Package is deleted."))
+	if err != nil {
+		fmt.Println("Error writing response:", err)
+	}
 }
 
 // done... dont need auth?
@@ -695,10 +722,11 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 	authToken := r.Header.Get("X-Authorization")
 	if authToken == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -707,10 +735,11 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 	objectId, err := primitive.ObjectIDFromHex(resourceID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -718,10 +747,12 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 
 	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&result)
 	if err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    404,
-			Message: "Package does not exist.",
-		})
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("Package does not exist."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	fmt.Printf("%+v\n", result)
@@ -735,18 +766,22 @@ func PackageRate(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal([]byte(new_metrics), &ndjsondata)
 	if err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    500,
-			Message: "The package rating system choked on at least one of the metrics.",
-		})
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("The package rating system choked on at least one of the metrics."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	if err := AddPackageHistory(*result.Metadata, "RATE"); err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    500,
-			Message: "The package rating system choked on at least one of the metrics.",
-		})
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("The package rating system choked on at least one of the metrics."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -762,10 +797,11 @@ func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -773,10 +809,12 @@ func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
 
 	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&result)
 	if err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    404,
-			Message: "Package does not exist.",
-		})
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("Package does not exist."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -785,10 +823,12 @@ func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
 	result.Data.Content = ls
 
 	if err := AddPackageHistory(*result.Metadata, "DOWNLOAD"); err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    500,
-			Message: "The package rating system choked on at least one of the metrics.",
-		})
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("Failed to upload history..."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -804,10 +844,11 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -815,10 +856,12 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&result)
 	if err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    404,
-			Message: "Package does not exist.",
-		})
+		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("Package does not exist."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -828,30 +871,34 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(updatedPackage.Data.JSProgram)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	//if(result.Metadata.Name != updatedPackage.Metadata.Name || result.Metadata.Version != updatedPackage.Metadata.Version){
 	if result.Metadata.Name != updatedPackage.Metadata.Name {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	largeString := updatedPackage.Data.Content
 	fileID, err := storeLargeString(contentCollection, largeString)
 	if err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    400,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -868,19 +915,21 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	updateResult, err := repoCollection.UpdateOne(context.Background(), bson.M{"_id": objectId}, bson.M{"$set": result})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusInternalServerError,
-			Message: "An error occurred while updating the package.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("failed to update..."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
 	if updateResult.ModifiedCount == 0 { //could mean that nothing would have gotten updated
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -898,21 +947,24 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := AddPackageHistory(*updatedPackage.Metadata, "UPDATE"); err != nil {
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    500,
-			Message: "The package rating system choked on at least one of the metrics.",
-		})
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("failed to add pacakge history..."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(models.ModelError{
-		Code:    http.StatusOK,
-		Message: "Version is updated.",
-	})
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, err = w.Write([]byte("Version is updated."))
+	if err != nil {
+		fmt.Println("Error writing response:", err)
+	}
 
 }
 
-// Not done the filter for the database might have to be parsed
+// where to return error 413??
 func PackagesList(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	offset := r.Header.Get("offset")
@@ -935,11 +987,11 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&search)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
-		fmt.Print("here1")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -999,41 +1051,41 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 	cur, err := repoCollection.Find(context.Background(), filter)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "unexpected",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("unexpected cur"))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	cur1, err := repoCollection.Find(context.Background(), filter1)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "unexpected",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("unexpected cur1"))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	cur2, err := repoCollection.Find(context.Background(), filter2)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "unexpected",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("unexpected cur2"))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	cur3, err := repoCollection.Find(context.Background(), filter3)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "unexpected",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("unexpected cur3"))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -1043,11 +1095,11 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		err := cur.Decode(&myMap)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding"))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -1055,14 +1107,12 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
 		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
 		if pkg.Name == "" || pkg.Version == "" {
-			fmt.Print("here")
-
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding 2."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -1074,13 +1124,12 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		var myMap map[string]interface{}
 		err := cur1.Decode(&myMap)
 		if err != nil {
-			fmt.Println("here0")
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding 3."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -1088,14 +1137,12 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
 		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
 		if pkg.Name == "" {
-			fmt.Print("here1")
-
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding 4."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -1108,11 +1155,11 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		err := cur2.Decode(&myMap)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding 5."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -1120,14 +1167,12 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
 		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
 		if pkg.Name == "" || pkg.Version == "" {
-			fmt.Print("here2")
-
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding 6."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 		results = append(results, pkg)
@@ -1138,11 +1183,11 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		err := cur3.Decode(&myMap)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding 7."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 
@@ -1150,14 +1195,12 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 		pkg.Name = myMap["metadata"].(map[string]interface{})["name"].(string)
 		pkg.ID = myMap["metadata"].(map[string]interface{})["id"].(string)
 		if pkg.Name == "" || pkg.Version == "" {
-			fmt.Print("here3")
-
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			json.NewEncoder(w).Encode(models.ModelError{
-				Code:    500,
-				Message: "An error occurred while decoding package data.",
-			})
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("error decoding 8."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
 			return
 		}
 		results = append(results, pkg)
@@ -1165,11 +1208,11 @@ func PackagesList(w http.ResponseWriter, r *http.Request) {
 
 	if len(results) == 0 || len(results) < offsetNum*10 {
 		w.WriteHeader(http.StatusNotFound)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusNotFound,
-			Message: "No packages found",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 	if len(results) < 10 || (len(results) < (offsetNum+1)*10) && (len(results) > offsetNum*10) {
@@ -1270,10 +1313,11 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 	authToken := r.Header.Get("X-Authorization")
 	if authToken == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models.ModelError{
-			Code:    http.StatusBadRequest,
-			Message: "There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.",
-		})
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, err := w.Write([]byte("There is missing field(s) in the AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."))
+		if err != nil {
+			fmt.Println("Error writing response:", err)
+		}
 		return
 	}
 
@@ -1314,7 +1358,13 @@ func RegistryReset(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusBadRequest)
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, err := w.Write([]byte("Registry is reset."))
+	if err != nil {
+		fmt.Println("Error writing response:", err)
+	}
+	return
 }
 
 func AddPackageHistory(metadata models.PackageMetadata, action string) error {

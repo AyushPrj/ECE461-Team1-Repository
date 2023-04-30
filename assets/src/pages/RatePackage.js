@@ -23,7 +23,7 @@ const RatePackage = () => {
         const { id } = formData;
 
         try {
-            const response = await fetch(`http://localhost:8080/package/${id}/rate`, {
+            const response = await fetch(`https://webservice-381819.uc.r.appspot.com/package/${id}/rate`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
