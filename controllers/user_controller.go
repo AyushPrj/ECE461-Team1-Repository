@@ -563,7 +563,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-		ndjsonData.NetScore = 0.6
+		ndjsonData.NetScore = 0.6; //hardcoded for now
 		if ndjsonData.NetScore > 0.5 {
 			//insert
 			if _, err := repoCollection.InsertOne(context.Background(), modelPackage); err != nil {
@@ -595,11 +595,12 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			_, err = w.Write([]byte("Success. Check the ID in the returned metadata for the official ID."))
-			if err != nil {
-				fmt.Println("Error writing response:", err)
-			}
+			// w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			// _, err = w.Write([]byte("Success. Check the ID in the returned metadata for the official ID."))
+			// if err != nil {
+			// 	fmt.Println("Error writing response:", err)
+			// }
+			json.NewEncoder(w).Encode(resp)
 			return
 		} else {
 			w.WriteHeader(http.StatusFailedDependency)
@@ -805,7 +806,7 @@ func PackageRetrieve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var result models.ModelPackage
+	var result models.PkgResponse
 
 	err = repoCollection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&result)
 	if err != nil {

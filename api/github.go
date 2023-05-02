@@ -1,6 +1,7 @@
 package api
 
 import (
+	"ECE461-Team1-Repository/configs"
 	"ECE461-Team1-Repository/log"
 	"bufio"
 	"bytes"
@@ -14,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	// "ECE461-Team1-Repository/api"
+	// "github.com/joho/godotenv"
 )
 
 var GITHUB_TOKEN string
@@ -151,7 +154,7 @@ type Contributor struct {
 }
 
 func init() {
-	GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
+	GITHUB_TOKEN = configs.GetGithubUserToken();
 }
 
 func getGraphQLData(query string) []byte {

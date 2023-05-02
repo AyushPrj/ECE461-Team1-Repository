@@ -14,7 +14,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { AttachFile } from '@mui/icons-material';
 import JSZip from 'jszip';
-
+import { myGlobalUrl } from './Global'
 const CreatePackage = () => {
     const { register, handleSubmit, setValue, getValues } = useForm();
 
@@ -72,7 +72,7 @@ const CreatePackage = () => {
         console.log(requestData);
 
         try {
-            const response = await fetch('https://webservice-381819.uc.r.appspot.com/package', {
+            const response = await fetch(`${myGlobalUrl}/package`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ const CreatePackage = () => {
     };
 
     return (
-        <Container component="main" tabIndex="0">
+        <Container component="main" tabIndex={0}>
             <Box mt={4} mb={4}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Create Package
@@ -118,7 +118,7 @@ const CreatePackage = () => {
                                 label="Content (ZIP File)"
                                 required
                                 autoFocus
-                                tabIndex="0"
+                                tabIndex={0}
                                 inputProps={{
                                     ref: register('Content', { required: true }),
                                     'aria-label': 'Content (ZIP File)',
@@ -138,7 +138,7 @@ const CreatePackage = () => {
                             variant="contained"
                             color="primary"
                             type="submit"
-                            tabIndex="0"
+                            tabIndex={0}
                             aria-label="Submit package creation"
                         >
                             Submit

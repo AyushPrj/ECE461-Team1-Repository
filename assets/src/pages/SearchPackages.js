@@ -14,6 +14,7 @@ import {
     RadioGroup,
     Radio,
 } from '@mui/material';
+import {myGlobalUrl} from './Global'
 
 const SearchPackages = () => {
     const [search, setSearch] = useState('');
@@ -29,10 +30,10 @@ const SearchPackages = () => {
             let response;
             if (searchType === 'name') {
                 response = await fetch(
-                    `https://webservice-381819.uc.r.appspot.com/package/byName/${encodeURIComponent(search)}`
+                    `${myGlobalUrl}/package/byName/${encodeURIComponent(search)}`
                 );
             } else {
-                response = await fetch('https://webservice-381819.uc.r.appspot.com/package/byRegEx', {
+                response = await fetch(`${myGlobalUrl}/package/byRegEx`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -72,7 +73,7 @@ const SearchPackages = () => {
     };
 
     return (
-        <Container component="main" tabIndex="0">
+        <Container component="main" tabIndex={0}>
             <Box mt={4} mb={4}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Search Packages
@@ -86,7 +87,7 @@ const SearchPackages = () => {
                         onChange={(e) => setSearch(e.target.value)}
                         required
                         autoFocus
-                        tabIndex="0"
+                        tabIndex={0}
                         inputProps={{
                             'aria-label': 'Search packages',
                         }}
@@ -97,7 +98,7 @@ const SearchPackages = () => {
                         type="submit"
                         disabled={isLoading}
                         style={{ marginLeft: 8 }}
-                        tabIndex="0"
+                        tabIndex={0}
                         aria-label="Submit search"
                     >
                         Search
@@ -117,20 +118,20 @@ const SearchPackages = () => {
                             value="name"
                             control={<Radio />}
                             label="Search by Name"
-                            tabIndex="0"
+                            tabIndex={0}
                         />
                         <FormControlLabel
                             value="regex"
                             control={<Radio />}
                             label="Search by Regex"
-                            tabIndex="0"
+                            tabIndex={0}
                         />
                     </RadioGroup>
                 </FormControl>
             </form>
             {isLoading ? (
                 <CircularProgress
-                    tabIndex="0"
+                    tabIndex={0}
                     role="status"
                     aria-label="Loading search results"
                 />

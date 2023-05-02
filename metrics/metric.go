@@ -4,6 +4,7 @@ import (
 	"ECE461-Team1-Repository/api"
 	"ECE461-Team1-Repository/log"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 )
@@ -160,6 +161,26 @@ func GetMetrics(baseURL string, siteType int, name string) string {
 	// delete the cloned repo
 	api.DeleteClonedRepo(repo)
 
+	if(math.IsNaN(float64(rampUp))){
+		rampUp = 0;
+	}
+	if(math.IsNaN(float64(correctness))){
+		correctness = 0;
+	}
+	if(math.IsNaN(float64(busFactor))){
+		busFactor = 0;
+	}
+	if(math.IsNaN(float64(responsiveness))){
+		responsiveness = 0;
+	}
+	
+	if(math.IsNaN(float64(depPinRate))){
+		depPinRate = 0;
+	}
+	if(math.IsNaN(float64(reviewCoverage))){
+		reviewCoverage = 0;
+	}
+	
 	// OLD FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .3 * responsiveness + .2 * license) * license
 	//netScore := (0.1*float32(rampUp) + 0.1*float32(correctness) + 0.3*float32(busFactor) + 0.3*responsiveness + 0.2*float32(license)) * float32(license)
 	// NEW FORMULA: (.1 * rampUp + .1 * correctness + .3 * busFactor + .2 * responsiveness + .1 * depPinRate + .2 * reviewCoverage) * license

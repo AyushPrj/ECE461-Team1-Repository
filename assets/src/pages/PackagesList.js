@@ -14,6 +14,7 @@ import {
   Grid,
   Button,
 } from '@mui/material';
+import {myGlobalUrl} from './Global'
 
 const PackagesList = () => {
   const [packages, setPackages] = useState([]);
@@ -23,7 +24,7 @@ const PackagesList = () => {
 
   const fetchPackages = async () => {
     try {
-      const response = await fetch('https://webservice-381819.uc.r.appspot.com/packages', {
+      const response = await fetch(`${myGlobalUrl}/packages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,21 +56,21 @@ const PackagesList = () => {
   };
 
   return (
-    <Container component="main" tabIndex="0">
+    <Container component="main" tabIndex={0}>
       <Box mt={4} mb={4}>
         <Typography variant="h4" component="h1" gutterBottom>
           Packages List
         </Typography>
       </Box>
       <Grid container spacing={2}>
-        {/* Add tabIndex="0" and aria-label to input fields */}
+        {/* Add tabIndex={0} and aria-label to input fields */}
         <Grid item xs={12} sm={4}>
           <TextField
             label="Page Number"
             value={pageNumber}
             onChange={(e) => setPageNumber(e.target.value)}
             fullWidth
-            tabIndex="0"
+            tabIndex={0}
             aria-label="Page Number"
           />
         </Grid>
@@ -79,7 +80,7 @@ const PackagesList = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             fullWidth
-            tabIndex="0"
+            tabIndex={0}
             aria-label="Package Name"
           />
         </Grid>
@@ -89,7 +90,7 @@ const PackagesList = () => {
             value={version}
             onChange={(e) => setVersion(e.target.value)}
             fullWidth
-            tabIndex="0"
+            tabIndex={0}
             aria-label="Package Version"
           />
         </Grid>
@@ -98,7 +99,7 @@ const PackagesList = () => {
             variant="contained"
             color="primary"
             onClick={handleFetchPackages}
-            tabIndex="0"
+            tabIndex={0}
             aria-label="Fetch Packages"
           >
             Fetch Packages

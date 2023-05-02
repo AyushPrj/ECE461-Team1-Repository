@@ -11,6 +11,7 @@ import {
   Paper,
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
+import {myGlobalUrl} from './Global'
 
 const PackageDetails = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -23,7 +24,7 @@ const PackageDetails = () => {
     const { id } = formData;
 
     try {
-      const response = await fetch(`https://webservice-381819.uc.r.appspot.com/package/${id}`, {
+      const response = await fetch(`${myGlobalUrl}/package/${id}/rate`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -45,10 +46,10 @@ const PackageDetails = () => {
   };
 
   return (
-    <Container component="main" tabIndex="0">
+    <Container component="main" tabIndex={0}>
       <Box mt={4} mb={4}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Package Details
+          Package Rating
         </Typography>
       </Box>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -63,7 +64,7 @@ const PackageDetails = () => {
                 {...register('id', { required: true })}
                 required
                 autoFocus
-                tabIndex="0"
+                tabIndex={0}
                 inputProps={{
                   'aria-label': 'Package ID',
                 }}
@@ -75,7 +76,7 @@ const PackageDetails = () => {
               variant="contained"
               color="primary"
               type="submit"
-              tabIndex="0"
+              tabIndex={0}
               aria-label="Submit package ID"
             >
               Submit
@@ -86,7 +87,7 @@ const PackageDetails = () => {
       {response && (
         <Box mt={4}>
           <Paper elevation={3} sx={{ padding: 2 }}>
-            <Typography component="pre" tabIndex="0" aria-label="Package details response">
+            <Typography component="pre" tabIndex={0} aria-label="Package rating response">
               {JSON.stringify(response, null, 2)}
             </Typography>
           </Paper>

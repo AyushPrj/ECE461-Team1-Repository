@@ -14,6 +14,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { AttachFile } from '@mui/icons-material';
 import JSZip from 'jszip';
+import {myGlobalUrl} from './Global'
 
 const UpdatePackage = () => {
     const { register, handleSubmit, setValue, getValues, trigger, formState: { errors } } = useForm();
@@ -88,7 +89,7 @@ const UpdatePackage = () => {
         };
 
         try {
-            const response = await fetch(`https://webservice-381819.uc.r.appspot.com/package/${id}`, {
+            const response = await fetch(`${myGlobalUrl}/package/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -127,7 +128,7 @@ const UpdatePackage = () => {
 
 
     return (
-        <Container component="main" tabIndex="0">
+        <Container component="main" tabIndex={0}>
             <Box mt={4} mb={4}>
                 <Typography variant="h4" component="h1" gutterBottom>
                     Update Package
@@ -144,7 +145,7 @@ const UpdatePackage = () => {
                                 label="Package ID"
                                 required
                                 autoFocus
-                                tabIndex="0"
+                                tabIndex={0}
                                 {...register('id', { required: true })}
                                 inputProps={{
                                     'aria-label': 'Package ID',
@@ -162,7 +163,7 @@ const UpdatePackage = () => {
                                 onChange={handleUpload}
                                 label="Content (ZIP File)"
                                 required
-                                tabIndex="0"
+                                tabIndex={0}
                                 inputProps={{
                                     ref: register('Content', { required: true }),
                                     'aria-label': 'Content (ZIP File)',
@@ -183,7 +184,7 @@ const UpdatePackage = () => {
                             color="primary"
                             type="submit"
                             onClick={handleClick}
-                            tabIndex="0"
+                            tabIndex={0}
                             aria-label="Submit package update"
                         >
                             Submit
