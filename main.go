@@ -31,7 +31,7 @@ func main() {
     if port == "" {
         port = "8080"
     }
-
+	fmt.Printf("Listening on port %s\n", port)
     templog.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router)))
 }
 

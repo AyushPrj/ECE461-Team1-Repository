@@ -31,6 +31,7 @@ const PackageDetails = () => {
           'Accept': '*/*',
           'X-Authorization': 'hello23'
         },
+        redirect: "manual"
       });
 
       if (response.ok) {

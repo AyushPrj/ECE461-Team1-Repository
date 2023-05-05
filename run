@@ -18,7 +18,7 @@ function install {
 }
 
 function build {
-    (go build -o maine main.go)
+    (go build -o main main.go)
 }
 
 function test {
@@ -31,7 +31,7 @@ function test {
 }
 
 function run {
-    (./maine $1)
+    (./main $1)
 }
 
 export $(cat .env | grep -v ^# | grep -v ^alias | xargs)

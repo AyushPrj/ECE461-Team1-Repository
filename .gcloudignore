@@ -13,6 +13,7 @@
 .git
 .gitignore
 assets/
+cloudbuild.yaml
 
 # Binaries for programs and plugins
 *.exe

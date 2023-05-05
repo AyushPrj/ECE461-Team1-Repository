@@ -81,6 +81,7 @@ const CreatePackage = () => {
                     // 'Authorization': 'Bearer ' + token
                 },
                 body: JSON.stringify(requestData),
+                redirect: "manual"
             });
 
             if (response.ok) {

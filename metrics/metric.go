@@ -7,6 +7,7 @@ import (
 	"math"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func getBusFactor(url string) float32 {
@@ -134,6 +135,10 @@ GetMetrics calculates rating for the input repo
 func GetMetrics(baseURL string, siteType int, name string) string {
 	var repo api.Repo
 	// fmt.Printf("net score \n")
+	log.Println(log.DEBUG, "Get metrics called with parameters baseURL: ", baseURL, " siteType: ", siteType, " name: ", name)
+	
+	// trim the name to remove the .git extension
+	name = strings.TrimSuffix(name, ".git")
 
 	if siteType == api.NPM {
 		giturl := api.GetGithubURL(name)
@@ -143,6 +148,10 @@ func GetMetrics(baseURL string, siteType int, name string) string {
 	} else if siteType == api.GITHUB {
 		repo = api.GetRepo(name)
 	}
+
+	// iterate through the fields of repo and print them out if they are not null
+	// fmt.Printf("repo: %+v\n", repo)
+
 
 	rampUp, numLines := getRampUpScore(repo)
 

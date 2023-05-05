@@ -4,6 +4,7 @@ import (
 	"ECE461-Team1-Repository/configs"
 	"ECE461-Team1-Repository/metrics"
 	models "ECE461-Team1-Repository/models"
+	log "ECE461-Team1-Repository/log"
 	"archive/zip"
 	"bytes"
 	"context"
@@ -11,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	// "log"
 	"regexp"
 	"strconv"
 	"time"
@@ -514,14 +516,61 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	var newMetadata models.PackageMetadata
 
-	repoPath := strings.TrimPrefix(packageData.URL, "https://github.com/")
-	username, repoName := path.Split(repoPath)
-	repoPath = strings.TrimSuffix(username+repoName, "/")
+	var url, ver, e = "", "", false
+	var repoPath = ""
+	var largeString = ""
+	// If content is null and Url is not null use the url and download the zip
+	if packageData.Content == "" && packageData.URL != ""{
+		largeString, err = downloadZip(packageData.URL)
+		if err != nil {
+			log.Println(log.DEBUG, "Error downloading zip file:", err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly (e.g. Content and URL are both set), or the AuthenticationToken is invalid."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
+			return
+		}
+		url, ver, e = extractVersionUrlFromZip(largeString)
+		log.Printf(log.DEBUG, "LargeString: %s\n", largeString)
+		log.Printf(log.DEBUG, "url: %s, ver: %s, e: %t\n", url, ver, e)
+		// if e is false there was an error decoding the downloaded zip file
+		if !e {
+			log.Println(log.DEBUG, "Error extracting version and url from zip file:", err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly (e.g. Content and URL are both set), or the AuthenticationToken is invalid."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
+			return
+		}
+	}
+	// if content is not null, decode the zip file
+	if packageData.URL == "" && packageData.Content != "" {
+		url, ver, e = extractVersionUrlFromZip(packageData.Content)
+		// if e is false there was an error decoding the downloaded zip file
+		if !e {
+			log.Println(log.DEBUG ,"Error extracting version and url from zip file:", err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, err := w.Write([]byte("There is missing field(s) in the PackageData/AuthenticationToken or it is formed improperly (e.g. Content and URL are both set), or the AuthenticationToken is invalid."))
+			if err != nil {
+				fmt.Println("Error writing response:", err)
+			}
+			return
+		}
+	}
+	repoPaths := strings.Split(url, "/")
+	username, repoName := repoPaths[3], repoPaths[4]
+	repoPath = strings.TrimSuffix(username+"/"+repoName, "/")
 
 	newMetadata.Name = path.Base(repoPath)
 
-	ver, e := extractVersionFromZip(packageData.Content)
-	largeString := packageData.Content
+	log.Printf(log.DEBUG, "url is : %s\n", url);
+	log.Printf(log.DEBUG, "repoPath: %s\n", repoPath);
+
 	fileID, err := storeLargeString(contentCollection, largeString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -554,7 +603,6 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	newMetadata.ID = modelPackage.ID.Hex()
 
 	if !packageExists(modelPackage.Metadata.Name, modelPackage.Metadata.Version) {
-
 		new_metrics := metrics.GetMetrics("https://github.com", 1, repoPath) //get metrics
 
 		var ndjsonData models.PackageRating

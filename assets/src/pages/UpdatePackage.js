@@ -96,6 +96,7 @@ const UpdatePackage = () => {
                     'Accept': '*/*',
                 },
                 body: JSON.stringify(requestData),
+                redirect: 'manual'
             });
 
             if (response.ok) {

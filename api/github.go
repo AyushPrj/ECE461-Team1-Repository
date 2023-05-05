@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -201,6 +202,7 @@ func getRequest(url string) []byte {
 }
 
 func GetRepo(url string) Repo {
+	log.Printf("Getting repo data for %s", url)
 	responseData := getRequest("https://api.github.com/repos/" + url)
 
 	var responseObject Repo
@@ -452,7 +454,8 @@ func RunClocOnRepo(repo Repo) string {
 	clone := exec.Command("git", "clone", cloneString)
 	err = clone.Run()
 	if err != nil {
-		log.Println(log.DEBUG, err)
+		log.Println(log.DEBUG, "Error cloning repo:", err)
+		// log.Println(log.DEBUG, err)
 	}
 
 	folderName := repo.Name + "/"
@@ -460,11 +463,13 @@ func RunClocOnRepo(repo Repo) string {
 	out, err := cloc.CombinedOutput()
 
 	if err != nil {
-		log.Println(log.DEBUG, err)
+		log.Println(log.DEBUG, "Error running cloc:", err)
+		// log.Println(log.DEBUG, err)
 	}
 
 	stringOut := string(out)
 	os.Chdir(dir)
+	fmt.Printf("CLOC OUTPUT:\n")
 	log.Println(log.DEBUG, stringOut)
 
 	return stringOut

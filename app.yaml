@@ -12,7 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# steps:
+# - name: 'bash'
+#   script: |
+#     #!/usr/bin/env bash
+#     echo "installing cloc"
+#     npm install -g cloc 
+
 runtime: go118
+# runtime: custom
+# env: flex
 
 handlers:
 - url: /static
@@ -20,3 +29,4 @@ handlers:
 
 - url: /.*
   script: auto
+

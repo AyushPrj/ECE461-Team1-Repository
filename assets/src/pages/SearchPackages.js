@@ -30,7 +30,10 @@ const SearchPackages = () => {
             let response;
             if (searchType === 'name') {
                 response = await fetch(
-                    `${myGlobalUrl}/package/byName/${encodeURIComponent(search)}`
+                    `${myGlobalUrl}/package/byName/${encodeURIComponent(search)}`,{
+                        method: 'GET',
+                        redirect: "manual"
+                    }
                 );
             } else {
                 response = await fetch(`${myGlobalUrl}/package/byRegEx`, {
@@ -39,6 +42,8 @@ const SearchPackages = () => {
                         'Content-Type': 'application/json',
                     },
                     body: search,
+                    redirect: "manual"
+
                 });
             }
 

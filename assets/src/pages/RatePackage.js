@@ -30,6 +30,8 @@ const PackageDetails = () => {
           'Content-Type': 'application/json',
           'Accept': '*/*',
         },
+        redirect: "manual"
+
       });
 
       if (response.ok) {

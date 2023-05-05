@@ -1,31 +1,60 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.18
+# FROM golang:1.18
 
+# WORKDIR /app
+
+# ENV PORT 8080
+# ENV HOST 0.0.0.0
+
+# #copy files
+# COPY . ./
+# RUN go mod tidy && go mod download
+
+# #build
+# RUN go build -o maine main.go
+
+# EXPOSE 8080
+# # EXPOSE 3000
+
+# #run main
+# # CMD HOME=/root go run main/main.go 
+# CMD ["./maine"]
+
+# Stage 1: Build the Go application
+FROM golang:1.18 AS builder
+
+# Set the working directory
 WORKDIR /app
 
-ENV PORT 8080
-ENV HOST 0.0.0.0
+# Copy your Go application's source code
+COPY . .
 
-#copy files
-COPY . ./
-RUN go mod tidy && go mod download
+ENV LOG_LEVEL="2"
+ENV LOG_FILE="logfile.log"
 
-#build
-RUN go build -o maine main.go
+# Build your Go application
+RUN go build -o main . || (echo "Build failed" && exit 1)
 
-#set env vars
-ARG MONGOURI
-ENV MONGOURI $MONGOURI
-ENV DANGEROUSLY_DISABLE_HOST_CHECK=true
+# Stage 2: Set up the final image with Go application, Perl, and cloc
+FROM perl:5.34
 
-# RUN apt-get update && apt-get upgrade -y && apt-get install -y nodejs npm   
-# RUN npm install
+# Set the working directory
+WORKDIR /app
 
+# Copy the built Go application from the builder stage
+COPY --from=builder /app/main /app/main
+
+# # Copy the built build folder
+# COPY ./build /app/build
+
+# Install cloc
+RUN curl -L -o cloc https://github.com/AlDanial/cloc/releases/download/v1.90/cloc-1.90.pl \
+    && chmod +x cloc \
+    && mv cloc /usr/local/bin
+
+# Expose the port your application listens on
 EXPOSE 8080
-# EXPOSE 3000
 
-#run main
-# CMD HOME=/root go run main/main.go 
-CMD ["./maine"]
-
+# Start your Go application
+CMD ["/app/main"]

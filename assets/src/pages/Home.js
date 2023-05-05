@@ -21,6 +21,7 @@ const Home = () => {
           // If you need an authentication token, add it here
           // 'Authorization': 'Bearer ' + token
         },
+        redirect: "manual"
       });
 
       if (response.ok) {

@@ -36,6 +36,8 @@ const PackagesList = () => {
             Name: name,
           },
         ]),
+        redirect: "manual"
+
       });
 
       if (response.ok) {
