@@ -34,7 +34,7 @@ function run {
     (./main $1)
 }
 
-export $(cat .env | grep -v ^# | grep -v ^alias | xargs)
+# export $(cat .env | grep -v ^# | grep -v ^alias | xargs)
 case "$1" in
     "install")
         install

@@ -19,9 +19,9 @@
 #     echo "installing cloc"
 #     npm install -g cloc 
 
-runtime: go118
-# runtime: custom
-# env: flex
+# runtime: go118
+runtime: custom
+env: flex
 
 handlers:
 - url: /static

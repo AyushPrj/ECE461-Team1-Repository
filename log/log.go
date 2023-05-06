@@ -18,6 +18,12 @@ var LOG_FILE string
 func init() {
 	LOG_LEVEL = os.Getenv("LOG_LEVEL")
 	LOG_FILE = os.Getenv("LOG_FILE")
+	if(LOG_FILE == "") {
+		LOG_FILE = "logfile.log"
+	}
+	if(LOG_LEVEL == "") {
+		LOG_LEVEL = "2"
+	}
 	file, err := os.OpenFile(LOG_FILE, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
     if err != nil {
         log.Fatal(err)

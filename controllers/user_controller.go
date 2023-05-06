@@ -505,6 +505,7 @@ func PackageByRegExGet(w http.ResponseWriter, r *http.Request) {
 func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	var packageData models.PackageData
 	err := json.NewDecoder(r.Body).Decode(&packageData)
+	// log.Printf(log.DEBUG, "PackageCreate called with packageData: %+v", packageData)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -520,7 +521,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	var repoPath = ""
 	var largeString = ""
 	// If content is null and Url is not null use the url and download the zip
-	if packageData.Content == "" && packageData.URL != ""{
+	if packageData.Content == ""{
 		largeString, err = downloadZip(packageData.URL)
 		if err != nil {
 			log.Println(log.DEBUG, "Error downloading zip file:", err)
@@ -546,9 +547,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-	}
-	// if content is not null, decode the zip file
-	if packageData.URL == "" && packageData.Content != "" {
+	}else {
 		url, ver, e = extractVersionUrlFromZip(packageData.Content)
 		// if e is false there was an error decoding the downloaded zip file
 		if !e {
@@ -565,7 +564,7 @@ func PackageCreate(w http.ResponseWriter, r *http.Request) {
 	repoPaths := strings.Split(url, "/")
 	username, repoName := repoPaths[3], repoPaths[4]
 	repoPath = strings.TrimSuffix(username+"/"+repoName, "/")
-
+	repoPath = strings.TrimSuffix(repoPath, ".git")
 	newMetadata.Name = path.Base(repoPath)
 
 	log.Printf(log.DEBUG, "url is : %s\n", url);
@@ -889,7 +888,7 @@ func PackageUpdate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	vars := mux.Vars(r)
 	resourceID := vars["id"]
-	objectId, err := primitive.ObjectIDFromHex(resourceID)
+	objectId , err := primitive.ObjectIDFromHex(resourceID)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

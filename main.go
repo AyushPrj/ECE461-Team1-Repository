@@ -11,17 +11,17 @@ import (
 	// "strings"
 
 	sw "ECE461-Team1-Repository/routes"
-	templog "log"
+	// templog "log"
 )
 
 func main() {
     // Run database
     configs.ConnectDB()
-    templog.Printf("Server started")
+    fmt.Printf("Server started\n")
     router := sw.NewRouter()
 
     // Serve the React app's static files
-    // fs := CustomFileServer(http.Dir("./static/"))
+	fmt.Printf("serving build files\n")
     router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./build/static/"))))
     router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
         http.ServeFile(w, r, "./build/index.html")
@@ -32,7 +32,9 @@ func main() {
         port = "8080"
     }
 	fmt.Printf("Listening on port %s\n", port)
-    templog.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router)))
+	
+    // templog.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router)))
+    http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router))
 }
 
 func CORSHandler(h http.Handler) http.Handler {

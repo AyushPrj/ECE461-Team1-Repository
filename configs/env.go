@@ -50,10 +50,7 @@ func GetSecret(projectID, secretName string) (string, error) {
 }
 
 func EnvMongoURI() string {
-	// err := godotenv.Load()
-	// if err != nil {
-	//     log.Fatal("Error loading .env file")
-	// }
+	
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	secretName := "MONGOURI"
 	mongouri, _ := GetSecret(projectID, secretName)
