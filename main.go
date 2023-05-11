@@ -1,0 +1,52 @@
+package main
+
+import (
+	"ECE461-Team1-Repository/configs"
+	// "bytes"
+	"fmt"
+	// "io/ioutil"
+	"net/http"
+	"os"
+	// "path"
+	// "strings"
+
+	sw "ECE461-Team1-Repository/routes"
+	// templog "log"
+)
+
+func main() {
+    // Run database
+    configs.ConnectDB()
+    fmt.Printf("Server started\n")
+    router := sw.NewRouter()
+
+    // Serve the React app's static files
+	fmt.Printf("serving build files\n")
+    router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./build/static/"))))
+    router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        http.ServeFile(w, r, "./build/index.html")
+    })
+
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+	fmt.Printf("Listening on port %s\n", port)
+	
+    // templog.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router)))
+    http.ListenAndServe(fmt.Sprintf(":%s", port), CORSHandler(router))
+}
+
+func CORSHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, PUT, PATCH, DELETE, GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, access-control-allow-origin, access-control-allow-headers, X-Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
+}
